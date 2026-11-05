@@ -30,3 +30,7 @@ uv run jobs serve                      # web UI on http://127.0.0.1:8765
 - Sources are the Bundesagentur für Arbeit API and, optionally, Indeed via jobspy. Postings and the CLI output are German.
 - The CLI has a `--json` mode for agents; see [docs/agents.md](docs/agents.md).
 - Details: [usage](docs/usage.md), [code layout](docs/architecture.md).
+
+## License
+
+See [LICENSE.md](LICENSE.md).
