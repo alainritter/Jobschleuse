@@ -1,5 +1,5 @@
 # Changes here will be overwritten by Copier; do not edit manually
-_commit: v1.1.0
+_commit: v1.1.1
 _src_path: /home/a/Dev/Kalliope
 has_architecture: true
 has_screenshot: true
@@ -8,6 +8,4 @@ license: mit
 project_name: Jobschleuse
 screenshot_path: docs/screenshot.png
 status: active
-summary: 'Local pipeline from job search to a finished application: find postings,
-    enrich them with facts the result list lacks, shortlist, and fill an application
-    template with an LLM.'
+summary: 'Local pipeline from job search to a finished application: find postings, enrich them with facts the result list lacks, shortlist, and fill an application template with an LLM.'
