@@ -46,5 +46,8 @@
     "typescript": "~6.0.2",
     "vite": "^8.2.2",
     "vitest": "^4.1.11"
+  },
+  "overrides": {
+    "minimatch": "^11.0.1"
   }
 }
