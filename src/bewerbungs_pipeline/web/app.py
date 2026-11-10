@@ -135,8 +135,12 @@ def create_app(cfg: Config, nur_loopback: bool = False) -> FastAPI:
             Endpunkte (/api/*, /applications/*/preview, /template-assets/*).
             """
             datei = (FRONTEND_DIST / pfad).resolve()
+            # no-cache: Browser prüfen index.html/sw.js bei jedem Laden neu, sonst
+            # bleibt nach einem Frontend-Update die alte Version stehen (gehashte
+            # Dateien unter /assets ändern ihren Namen und sind davon nicht betroffen).
+            neu_pruefen = {"Cache-Control": "no-cache"}
             if pfad and datei.is_relative_to(dist_resolved) and datei.is_file():
-                return FileResponse(datei)
-            return FileResponse(FRONTEND_DIST / "index.html")
+                return FileResponse(datei, headers=neu_pruefen)
+            return FileResponse(FRONTEND_DIST / "index.html", headers=neu_pruefen)
 
     return app
