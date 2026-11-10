@@ -1,4 +1,3 @@
-import { useEffect, useRef } from "react";
 import { UserRound } from "lucide-react";
 import { Link, Outlet } from "react-router";
 import { CommandPalette } from "@/components/command-palette";
@@ -7,14 +6,6 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { HeaderActionsOutlet, HeaderActionsProvider } from "@/lib/header-actions";
 
 function Header() {
-  // Harmonia-Soundschalter (/ds/sounds.js) in die Header-Aktionen einhängen
-  const soundRef = useRef<HTMLSpanElement>(null);
-  useEffect(() => {
-    const host = soundRef.current;
-    if (host) window.dsSound?.mountToggle(host);
-    return () => host?.replaceChildren();
-  }, []);
-
   return (
     <>
       <header className="ds-header">
@@ -24,7 +15,6 @@ function Header() {
           <span className="ds-muted ds-hide-mobile text-sm font-normal">Stellen rein, Bewerbungen raus.</span>
         </div>
         <div className="ds-header-actions">
-          <span ref={soundRef} className="contents" />
           <Button variant="outline" size="icon" asChild>
             <Link to="/profil" aria-label="Profil" title="Profil">
               <UserRound />
