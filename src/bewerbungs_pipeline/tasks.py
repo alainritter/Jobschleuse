@@ -12,7 +12,7 @@ from dataclasses import dataclass, field, replace
 
 _executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="bewerbung")
 _lock = threading.Lock()
-_tasks: dict[str, "Task"] = {}
+_tasks: dict[str, Task] = {}
 _counter = itertools.count(1)
 
 

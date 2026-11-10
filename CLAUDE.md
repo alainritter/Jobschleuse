@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Setup & Befehle
 
 - Package-Manager ist **uv** (kein pip/poetry). Setup: `uv sync`, dann `.env` aus `.env.example` und `profile.yaml` aus `profile.yaml.example` befüllen.
-- Python `>=3.13`, src-layout (`src/bewerbungs_pipeline/`), Entry-Point `jobs` (`[project.scripts]` in `pyproject.toml`).
+- Python `>=3.14`, src-layout (`src/bewerbungs_pipeline/`), Entry-Point `jobs` (`[project.scripts]` in `pyproject.toml`).
 - Alles läuft über `uv run jobs <subcommand>` — kein Makefile/justfile.
 - Tests: `uv run pytest`. `pyproject.toml` setzt `filterwarnings = ["error"]` mit einer expliziten Ausnahme für eine starlette/httpx-Deprecation — jede neue, nicht whitelistete Warnung lässt Tests fehlschlagen.
 - Kein Linter/Formatter konfiguriert (kein ruff/black/flake8-Setup).

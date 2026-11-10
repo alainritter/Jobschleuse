@@ -2,7 +2,7 @@
 name = "jobschleuse"
 version = "0.1.0"
 description = "Stellen finden und Bewerbungsvorlage per LLM füllen"
-requires-python = ">=3.13"
+requires-python = ">=3.14"
 dependencies = [
     "httpx",
     "pydantic",
@@ -37,7 +37,7 @@ filterwarnings = [
 ]
 
 [tool.ruff]
-target-version = "py313"
+target-version = "py314"
 
 [tool.ruff.lint]
 # BLE001 (blind except): Netzfehler-Handling fängt bewusst breit ab, um die
