@@ -1,0 +1,38 @@
+# AGENTS.md
+
+Prüfen: `uv run pytest -q && (cd frontend && npm test)` (Runner und Abnahme nutzen diesen Befehl)
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Setup & Befehle
+
+- Package-Manager ist **uv** (kein pip/poetry). Setup: `uv sync`, dann `.env` aus `.env.example` und `profile.yaml` aus `profile.yaml.example` befüllen.
+- Python `>=3.14`, src-layout (`src/bewerbungs_pipeline/`), Entry-Point `jobs` (`[project.scripts]` in `pyproject.toml`).
+- Alles läuft über `uv run jobs <subcommand>` — kein Makefile/justfile.
+- Tests: `uv run pytest`. `pyproject.toml` setzt `filterwarnings = ["error"]` mit einer expliziten Ausnahme für eine starlette/httpx-Deprecation — jede neue, nicht whitelistete Warnung lässt Tests fehlschlagen.
+- Kein Linter/Formatter konfiguriert (kein ruff/black/flake8-Setup).
+
+## Pipeline-Fluss
+
+`fetch` (Suche + Anreicherung + Frischeprüfung) → `check` (gleicht Bestand gegen die Arbeitsagentur-API ab, markiert verschwundene Anzeigen statt sie zu löschen — läuft auch automatisch bei jedem `fetch` mit) → `list`/`pick`/`reject` (Statuspflege) → `generate` (LLM füllt `data-slot`-Blöcke in einer HTML-Vorlage anhand `profile.yaml` + Stellendetails) → PDF-Export via lokalem Chromium (Playwright braucht einen bereits installierten Browser: chromium/google-chrome/brave, sonst Abbruch mit Fehlermeldung).
+
+Storage ist reines SQLite (`data/jobs.db`, gitignored), kein ORM — Schema direkt in `db.py`.
+
+## Web
+
+Die Weboberfläche ist gleichwertiges Interface, nicht nur CLI-Beiwerk — genutzt auch vom Handy: im Tailnet über die Pforte (`https://sirius.tail828e8c.ts.net:8445`, 2FA); der Dienst bleibt auf `127.0.0.1` und lässt den Tailscale-Namen per `JOBS_ALLOWED_HOSTS` (kommagetrennt, im systemd-Unit) als Host zu. `uv run jobs serve` startet FastAPI (Default-Port 8765, `--port`, `--no-browser`, `--host`) und liefert unter `/` das gebaute React-Frontend aus (`frontend/dist/`, committed) sowie unter `/api/*` die JSON-API, gegen die es arbeitet. Web nutzt dieselbe Business-Logik wie die CLI (`applications.py`, `db.py`), keine Duplikation. Background-Tasks (`tasks.py`) halten Status bewusst nur im Speicher (ThreadPoolExecutor, max. 2 Worker) — überlebt keinen App-Neustart, ist Absicht (Einzelbetrieb). Neue Quellen (z. B. `fetch-indeed`) bekommen deshalb i. d. R. sowohl CLI-Befehl als auch Web-Anbindung.
+
+Frontend-Arbeit passiert in `frontend/` (Vite + React + TypeScript + shadcn/ui) — eigenes `package.json`, unabhängig vom Python-Toolchain. `npm run dev` für Hot-Reload gegen die laufende FastAPI-API (Proxy in `vite.config.ts`), `npm run build` erzeugt `frontend/dist/` — **muss committed werden**, `uv run jobs serve` liest zur Laufzeit kein Node/npm. `npm test` (Vitest) deckt die Logik mit echtem Fehlerpotenzial ab (Debounce, Task-Polling), nicht jede Komponente. `/applications/{id}/preview` bleibt ein serverseitig gerenderter HTML-Endpunkt (iframe-Inhalt der Bewerbungsvorschau) — kein Teil der JSON-API.
+
+## Gotchas
+
+- LLM-Output (`llm.py`) wird aktiv gegen `profile.yaml` validiert (keine erfundenen Angaben, keine Technologien außerhalb des Profils, erzwungenes Antwortschema) — nicht blind übernehmen, wenn an der Generierung gearbeitet wird.
+- Git-Workflow: Feature-Branches + Pull Requests (nicht mehr direkt auf `master` committen).
+
+## Doku
+
+Release Notes liegen datiert unter `docs/releases/`.
+
+## UI-Regel (Harmonia)
+
+UI nur mit `/home/a/Dev/Harmonia/` (Einbindung: `Harmonia/README.md`). Keine eigenen Hex-Farben, px-Schriftgrößen oder Abstände – nur Tokens (`--fs-*`, `--space-*`, `--r-*`, Farbvariablen). Fehlende Komponenten ins Harmonia, nicht in die App.
