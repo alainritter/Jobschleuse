@@ -1,0 +1,16 @@
+/* Satoshi self-hosted. Pfade relativ zu dieser Datei (Bundler lösen sie auf;
+   ohne Bundler das Verzeichnis Harmonia/ unter /ds/ ausliefern). */
+@font-face {
+  font-family: 'Satoshi';
+  src: url('./fonts/Satoshi-Variable.woff2') format('woff2-variations');
+  font-weight: 300 900;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Satoshi';
+  src: url('./fonts/Satoshi-VariableItalic.woff2') format('woff2-variations');
+  font-weight: 300 900;
+  font-style: italic;
+  font-display: swap;
+}

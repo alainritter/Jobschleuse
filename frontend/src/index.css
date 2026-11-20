@@ -1,0 +1,42 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is([data-theme="dark"] *));
+
+/* Design-System: Tokens, Basis, Komponenten und Tailwind/shadcn-Mapping zentral
+   in harmonia/ (Kopie des Harmonia-Designsystems, Update: npm run sync:harmonia; Fonts in main.tsx). */
+@import "./harmonia/tokens.css";
+@import "./harmonia/base.css" layer(base);
+@import "./harmonia/components.css" layer(components);
+@import "./harmonia/shadcn.css";
+@import "./harmonia/tailwind-scale.css";
+
+@theme inline {
+  --font-heading: var(--font-sans);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+}
+
+/* sonner legt den Schließen-Knopf als Eckknopf an; im .ds-toast sitzt er wie im Styleguide rechts in der Zeile. */
+[data-sonner-toast].ds-toast [data-close-button] {
+  position: static;
+  order: 3;
+  transform: none;
+  width: var(--control-h-sm);
+  height: var(--control-h-sm);
+  margin-left: auto;
+  border-color: transparent;
+  background: transparent;
+  color: inherit;
+}

@@ -1,0 +1,601 @@
+/* Harmonia – Komponenten. Präfix ds-, nutzt ausschließlich Tokens. */
+
+/* ---------- Layout ---------- */
+.ds-shell { display: flex; min-height: 100dvh; }
+.ds-sidebar {
+  width: var(--sidebar-width); flex-shrink: 0;
+  background: var(--bg-sidebar); border-right: 1px solid var(--border);
+  padding: var(--space-4); display: flex; flex-direction: column; gap: var(--space-1);
+  position: sticky; top: 0; height: 100dvh; overflow-y: auto; z-index: var(--z-sidebar);
+}
+.ds-main { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.ds-header {
+  height: var(--header-height); flex-shrink: 0;
+  display: flex; align-items: center; gap: var(--space-3);
+  padding: 0 var(--page-inset);
+  background: var(--bg-elevated); border-bottom: 1px solid var(--border);
+  position: sticky; top: 0; z-index: var(--z-sticky);
+}
+.ds-page { width: 100%; max-width: var(--content-max); margin: 0 auto; padding: var(--page-pad); display: flex; flex-direction: column; gap: var(--space-5); }
+.ds-page.prose { max-width: var(--content-prose); }
+.ds-page-head { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; }
+.ds-scroll { overflow-x: auto; }
+
+.ds-stack { display: flex; flex-direction: column; gap: var(--space-3); }
+.ds-row { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
+.ds-grid { display: grid; gap: var(--space-4); grid-template-columns: repeat(auto-fill, minmax(18rem, 1fr)); }
+
+.ds-nav-item {
+  display: flex; align-items: center; gap: var(--space-2);
+  height: var(--control-h); padding: 0 var(--space-3);
+  border-radius: var(--r-md); color: var(--text-dim); font-size: var(--fs-base);
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+.ds-nav-item:hover { background: var(--bg-hover); color: var(--text); }
+.ds-nav-item[aria-current='page'], .ds-nav-item.active { background: var(--bg-active); color: var(--accent-bright); }
+
+/* Header-Aufbau (alle Apps gleich): [Icon-Btn Menü] .ds-brand … .ds-header-actions (Icon-Buttons) */
+.ds-brand {
+  display: flex; align-items: center; gap: var(--space-2); min-width: 0;
+  font-size: var(--fs-lg); font-weight: 700; letter-spacing: -0.015em; line-height: var(--leading-tight);
+  color: var(--text); white-space: nowrap;
+}
+.ds-brand :is(h1, span) { font: inherit; letter-spacing: inherit; margin: 0; overflow: hidden; text-overflow: ellipsis; }
+.ds-brand > :is(img, svg) { width: calc(var(--control-h) - var(--space-2)); height: calc(var(--control-h) - var(--space-2)); flex-shrink: 0; }
+.ds-header-actions { display: flex; align-items: center; gap: var(--space-2); margin-left: auto; flex-shrink: 0; }
+
+/* Schwebende Hauptaktion (mobil) */
+.ds-fab {
+  position: fixed; right: var(--space-4); bottom: calc(var(--space-4) + env(safe-area-inset-bottom));
+  z-index: var(--z-overlay);
+  display: inline-flex; align-items: center; justify-content: center;
+  width: var(--space-8); height: var(--space-8); border-radius: var(--r-full);
+  background: var(--accent); color: var(--accent-fg); box-shadow: var(--sh-md);
+  transition: background var(--transition-fast);
+}
+.ds-fab:hover { background: var(--accent-bright); color: var(--accent-fg); }
+.ds-fab svg { width: var(--icon-lg); height: var(--icon-lg); }
+
+@media (max-width: 900px) {
+  .ds-sidebar { display: none; }
+}
+@media (max-width: 600px) {
+  .ds-hide-mobile { display: none !important; }
+}
+
+/* ---------- Card ---------- */
+.ds-card {
+  background: var(--bg-elevated); border: 1px solid var(--border);
+  border-radius: var(--r-md); padding: var(--space-4);
+  box-shadow: var(--sh-md);
+  display: flex; flex-direction: column; gap: var(--space-3);
+  transition: border-color var(--transition);
+}
+.ds-card:hover { border-color: var(--border-strong); }
+.ds-card-title { font-size: var(--fs-sm); font-weight: 600; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.04em; }
+
+.ds-stat { font-size: var(--fs-2xl); font-weight: 700; line-height: var(--leading-tight); letter-spacing: -0.02em; }
+
+/* ---------- Button ---------- */
+/* Look = Jobschleuse (shadcn-Button): 32px, runde Ecken, 13px/500, 3px-Fokusring. */
+.ds-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: calc(var(--space-1) * 1.5);
+  height: var(--control-h); padding: 0 calc(var(--space-1) * 2.5); flex-shrink: 0;
+  background: color-mix(in srgb, var(--border-strong) 30%, transparent); color: var(--text);
+  border: 1px solid var(--border-strong); border-radius: var(--r-md);
+  font: inherit; font-size: var(--fs-sm); font-weight: 500; white-space: nowrap; cursor: pointer; user-select: none;
+  transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast), box-shadow var(--transition-fast);
+}
+.ds-btn:hover { background: color-mix(in srgb, var(--border-strong) 50%, transparent); }
+.ds-btn:active:not(:disabled) { transform: translateY(1px); }
+.ds-btn:disabled { opacity: 0.5; pointer-events: none; }
+.ds-btn svg { width: var(--icon-md); height: var(--icon-md); flex-shrink: 0; pointer-events: none; }
+.ds-btn.primary { background: var(--accent); border-color: transparent; color: var(--accent-fg); }
+.ds-btn.primary:hover { background: var(--accent-bright); }
+.ds-btn.ghost { background: transparent; border-color: transparent; }
+.ds-btn.ghost:hover { background: color-mix(in srgb, var(--bg-active) 50%, transparent); }
+.ds-btn.danger { background: color-mix(in srgb, var(--bad) 20%, transparent); border-color: transparent; color: var(--bad-text); }
+.ds-btn.danger:hover { background: color-mix(in srgb, var(--bad) 30%, transparent); }
+.ds-btn.active { background: var(--bg-active); color: var(--accent-bright); }
+.ds-btn.sm { height: var(--control-h-sm); gap: var(--space-1); border-radius: var(--r-md); font-size: var(--fs-xs); }
+.ds-btn.sm svg { width: var(--icon-sm); height: var(--icon-sm); }
+.ds-btn.icon { width: var(--control-h); padding: 0; }
+.ds-btn.sm.icon { width: var(--control-h-sm); }
+.ds-btn.block { width: 100%; }
+
+/* ---------- Formular ---------- */
+.ds-input, .ds-select {
+  height: var(--control-h); padding: 0 var(--space-3);
+  background: var(--bg-elevated); color: var(--text);
+  border: 1px solid var(--border-control); border-radius: var(--r-md);
+  font: inherit; font-size: var(--fs-base);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+.ds-input::placeholder { color: var(--text-muted); }
+textarea.ds-input { height: auto; min-height: calc(var(--control-h) * 3); padding: var(--space-2) var(--space-3); resize: vertical; line-height: var(--leading-normal); }
+.ds-input:disabled, .ds-select:disabled { opacity: 0.5; cursor: not-allowed; }
+.ds-select {
+  appearance: none; cursor: pointer; padding-right: var(--space-6);
+  background-image: linear-gradient(45deg, transparent 50%, var(--text-muted) 50%), linear-gradient(135deg, var(--text-muted) 50%, transparent 50%);
+  background-position: calc(100% - var(--space-4) - 0.3125rem) 50%, calc(100% - var(--space-4)) 50%;
+  background-size: 0.3125rem 0.3125rem; background-repeat: no-repeat;
+}
+.ds-select option { background: var(--bg-elevated); color: var(--text); }
+
+/* Checkbox + Switch: <input type="checkbox" class="ds-checkbox|ds-switch">, meist in <label class="ds-check"> */
+.ds-check { display: inline-flex; align-items: center; gap: var(--space-2); font-size: var(--fs-sm); color: var(--text); cursor: pointer; user-select: none; }
+.ds-checkbox, .ds-switch { appearance: none; margin: 0; flex-shrink: 0; cursor: pointer; position: relative; transition: background var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast); }
+.ds-checkbox {
+  width: var(--space-4); height: var(--space-4);
+  border: 1px solid var(--border-control); border-radius: var(--r-sm); background: var(--bg-elevated);
+}
+.ds-checkbox:checked { background: var(--accent); border-color: var(--accent); }
+.ds-checkbox:checked::after {
+  content: ''; position: absolute; left: 50%; top: 45%;
+  width: 0.25rem; height: 0.5rem; border: solid var(--accent-fg); border-width: 0 2px 2px 0;
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+.ds-switch {
+  width: 2rem; height: 1.15rem; border-radius: var(--r-full);
+  background: var(--border-control); border: 1px solid transparent;
+}
+.ds-switch::after {
+  content: ''; position: absolute; top: 50%; left: 0.125rem;
+  width: 0.85rem; height: 0.85rem; border-radius: var(--r-full);
+  background: var(--text); transform: translateY(-50%);
+  transition: transform var(--transition-fast), background var(--transition-fast);
+}
+.ds-switch:checked { background: var(--accent); }
+.ds-switch:checked::after { background: var(--accent-fg); transform: translate(0.85rem, -50%); }
+.ds-checkbox:disabled, .ds-switch:disabled { opacity: 0.5; cursor: not-allowed; }
+.ds-label { font-size: var(--fs-sm); color: var(--text-dim); }
+/* Error state: aria-invalid="true" on the control plus .ds-field-error below it (link with aria-describedby) */
+.ds-input[aria-invalid='true'], .ds-select[aria-invalid='true'] { border-color: var(--bad); }
+.ds-field-error { font-size: var(--fs-xs); color: var(--bad-text); }
+.ds-field-error:empty { display: none; }
+
+/* ---------- Tabelle ---------- */
+.ds-table { width: 100%; border-collapse: collapse; font-size: var(--fs-base); }
+.ds-table th {
+  text-align: left; font-size: var(--fs-xs); font-weight: 600; color: var(--text-dim);
+  text-transform: uppercase; letter-spacing: 0.05em;
+  padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--border-strong);
+}
+.ds-table td { padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--border); }
+.ds-table tbody tr:hover { background: var(--bg-hover); }
+.ds-table .num { text-align: right; }
+/* .sm: compact table (13px); .nowrap: no line breaks in cells (wrap the table in .ds-scroll) */
+.ds-table.sm { font-size: var(--fs-sm); }
+.ds-table.nowrap :is(th, td) { white-space: nowrap; }
+/* sortable header: a button inside th, direction in the th's aria-sort */
+.ds-table th .ds-sort {
+  font: inherit; letter-spacing: inherit; text-transform: inherit; color: inherit;
+  background: none; border: 0; padding: 0; cursor: pointer;
+  display: inline-flex; align-items: center; gap: var(--space-1);
+}
+.ds-table th .ds-sort .ds-icon { opacity: 0.5; }
+.ds-table th[aria-sort="ascending"] .ds-icon, .ds-table th[aria-sort="descending"] .ds-icon { opacity: 1; color: var(--accent); }
+.ds-table th .ds-sort:hover { color: var(--text); }
+.ds-table th .ds-sort:hover .ds-icon { opacity: 1; }
+
+/* ---------- Badge / Meta ---------- */
+.ds-badge {
+  display: inline-flex; align-items: center; gap: var(--space-1);
+  padding: 1px var(--space-2); border-radius: var(--r-full);
+  font-size: var(--fs-xs); font-weight: 600;
+  color: var(--text-dim); background: var(--bg-active);
+}
+.ds-badge.good { color: var(--good-text); background: color-mix(in srgb, var(--good) 15%, transparent); }
+.ds-badge.bad  { color: var(--bad-text); background: color-mix(in srgb, var(--bad) 15%, transparent); }
+.ds-badge.warn { color: var(--warn-text); background: color-mix(in srgb, var(--warn) 15%, transparent); }
+.ds-badge.info { color: var(--info-text); background: color-mix(in srgb, var(--info) 15%, transparent); }
+.ds-badge.accent { color: var(--accent); background: var(--accent-glow); }
+
+.ds-muted { color: var(--text-muted); font-size: var(--fs-sm); }
+/* Leerzustand: optional .ds-icon, dann Text (<p>) und ggf. Aktion */
+.ds-empty { display: flex; flex-direction: column; align-items: center; gap: var(--space-3); padding: var(--space-5) var(--space-4); text-align: center; color: var(--text-dim); font-size: var(--fs-base); }
+.ds-empty[hidden] { display: none; }
+.ds-empty p { margin: 0; }
+.ds-empty .ds-icon { font-size: var(--fs-2xl); color: var(--accent); }
+/* ---------- Tab-Leiste (mobile Hauptnavigation) ---------- */
+/* <nav class="ds-tabbar"><a aria-current="page"><svg class="ds-icon"/>Start</a>…</nav>, max. 5 Einträge.
+   Nur bis 900px sichtbar (darüber übernimmt .ds-sidebar); die Seite braucht dann unten Platz: .ds-has-tabbar am body. */
+.ds-tabbar {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: var(--z-sticky);
+  display: flex; background: var(--bg-elevated); border-top: 1px solid var(--border);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+.ds-tabbar > * {
+  flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: calc(var(--space-1) / 2);
+  padding: var(--space-2) 0; background: none; border: 0; font: inherit; font-size: var(--fs-xs);
+  color: var(--text-muted); cursor: pointer; transition: color var(--transition-fast);
+}
+.ds-tabbar > * .ds-icon { font-size: var(--icon-lg); }
+.ds-tabbar > [aria-current='page'] { color: var(--accent-bright); }
+@media (min-width: 901px) { .ds-tabbar { display: none; } }
+@media (max-width: 900px) {
+  .ds-has-tabbar { padding-bottom: calc(var(--space-8) + env(safe-area-inset-bottom)); }
+  .ds-has-tabbar .ds-fab { bottom: calc(var(--space-8) + var(--space-4) + env(safe-area-inset-bottom)); }
+  .ds-has-tabbar .ds-toasts { bottom: calc(var(--space-8) * 2 + var(--space-5) + env(safe-area-inset-bottom)); } /* über Tabbar und FAB */
+}
+
+/* ---------- Segment-Schalter ---------- */
+/* <div class="ds-segment" role="group"><button aria-pressed="true">Monat</button><button aria-pressed="false">Jahr</button></div> */
+.ds-segment {
+  display: inline-flex; gap: calc(var(--space-1) / 2); padding: calc(var(--space-1) / 2);
+  background: var(--bg-active); border-radius: var(--r-full);
+}
+.ds-segment > button {
+  height: calc(var(--control-h) - var(--space-1)); padding: 0 var(--space-3); border: 0; border-radius: var(--r-full);
+  background: transparent; color: var(--text-dim); font: inherit; font-size: var(--fs-sm); cursor: pointer; white-space: nowrap;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+.ds-segment > button[aria-pressed='true'] { background: var(--bg-elevated); color: var(--text); box-shadow: var(--sh-sm); }
+
+/* ---------- Avatar / Monogramm ---------- */
+/* Rundes Kennzeichen für Anbieter/Personen: Logo (<img>), Icon oder Initialen. Farbe über --c (z. B. var(--cat-3)). */
+.ds-avatar {
+  --c: var(--accent);
+  width: 2.5rem; height: 2.5rem; flex-shrink: 0; border-radius: var(--r-full); overflow: hidden;
+  display: inline-flex; align-items: center; justify-content: center;
+  background: color-mix(in srgb, var(--c) 18%, var(--bg-elevated)); color: var(--c);
+  font-size: var(--fs-sm); font-weight: 700; letter-spacing: -0.02em; text-transform: uppercase;
+}
+.ds-avatar .ds-icon { font-size: var(--fs-lg); }
+.ds-avatar img { width: 70%; height: 70%; object-fit: contain; }
+.ds-avatar.sm { width: 2rem; height: 2rem; font-size: var(--fs-xs); }
+.ds-avatar.sm .ds-icon { font-size: var(--fs-md); }
+
+/* ---------- Chip (Kategorie, Filter) ---------- */
+.ds-chip {
+  --c: var(--text-dim);
+  display: inline-flex; align-items: center; gap: var(--space-1); max-width: 100%;
+  padding: 1px var(--space-2); border: 0; border-radius: var(--r-full);
+  background: color-mix(in srgb, var(--c) 15%, transparent); color: var(--c);
+  font: inherit; font-size: var(--fs-xs); font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+button.ds-chip { cursor: pointer; }
+button.ds-chip:hover { background: color-mix(in srgb, var(--c) 25%, transparent); }
+.ds-chip.empty { --c: var(--text-muted); background: transparent; box-shadow: inset 0 0 0 1px var(--border-strong); }
+
+/* ---------- Live-Karte ---------- */
+/* Aktive Karte: Kante und Glow pulsieren in --c (Farbe pro Zustand setzen); .fast für dringende Zustände. */
+.ds-live {
+  --c: var(--accent);
+  border-color: var(--c);
+  animation: ds-live-pulse 2s ease-in-out infinite;
+}
+.ds-live.fast { animation-duration: 1.2s; }
+@keyframes ds-live-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--c) 55%, transparent); }
+  50% { box-shadow: 0 0 var(--space-3) var(--space-1) color-mix(in srgb, var(--c) 35%, transparent); }
+}
+
+/* ---------- Fortschrittsbalken ---------- */
+/* <div class="ds-progress" style="--v:.6; --m:.5"><span></span><i></i></div>: --v Füllung 0..1, optional <i> als Markierung bei --m (SOLL). */
+.ds-progress {
+  --c: var(--accent);
+  position: relative; height: var(--space-2); border-radius: var(--r-full); background: var(--bg-active);
+}
+.ds-progress > span {
+  display: block; height: 100%; width: calc(min(var(--v, 0), 1) * 100%); border-radius: inherit; background: var(--c);
+  transition: width var(--transition);
+}
+.ds-progress.over > span { background: var(--bad); }
+.ds-progress > i {
+  position: absolute; top: calc(var(--space-1) * -0.5); bottom: calc(var(--space-1) * -0.5); width: 2px;
+  left: calc(min(var(--m, 0), 1) * 100% - 1px); background: var(--text-dim); border-radius: var(--r-full);
+}
+
+/* ---------- Listenzeile ---------- */
+/* .ds-item > .ds-avatar? + .ds-item-main (> .ds-item-title + .ds-item-meta) + .ds-item-end. Als <button> klickbar. */
+.ds-item {
+  display: flex; align-items: center; gap: var(--space-3); width: 100%; min-height: 3rem;
+  padding: var(--space-2); margin: 0 calc(var(--space-2) * -1); box-sizing: content-box;
+  background: none; border: 0; border-radius: var(--r-md); color: inherit; font: inherit; text-align: left;
+}
+button.ds-item { cursor: pointer; transition: background var(--transition-fast); }
+button.ds-item:hover, button.ds-item:focus-visible { background: var(--bg-hover); }
+button.ds-item:is(:hover, :focus-visible) .ds-item-meta { color: var(--text-dim); }
+.ds-item-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: calc(var(--space-1) / 2); }
+.ds-item-title { font-size: var(--fs-base); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ds-item-meta { display: flex; align-items: center; gap: var(--space-2); min-width: 0; font-size: var(--fs-xs); color: var(--text-muted); }
+.ds-item-meta > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ds-item-end { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; display: flex; flex-direction: column; align-items: flex-end; gap: calc(var(--space-1) / 2); }
+
+/* ---------- Icon ---------- */
+/* <svg class="ds-icon"><use href="<ds>/icons/sprite.svg#router"/></svg> – Lucide-Sprite, Liste in icons/build.sh.
+   Größe folgt der Schrift (1em), Farbe per currentColor. */
+.ds-icon {
+  width: 1em; height: 1em; flex-shrink: 0; vertical-align: -0.125em;
+  fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round;
+}
+
+/* ---------- Spinner (laufende Aktion, Laden) ---------- */
+/* <span class="ds-spinner" role="status" aria-label="Lädt"></span> – Größe über --ds-spinner-size (Standard --icon-sm), `lg` = --icon-lg, Farbe currentColor.
+   Dieselbe Optik hat .busy auf Buttons (ds-btn und shadcn). */
+.ds-spinner, .ds-btn.busy::before, [data-slot='button'].busy::before {
+  content: ''; display: inline-block; box-sizing: border-box;
+  width: var(--ds-spinner-size, var(--icon-sm)); height: var(--ds-spinner-size, var(--icon-sm)); flex-shrink: 0;
+  border: 2px solid currentColor; border-right-color: transparent; border-radius: var(--r-full);
+  animation: ds-spin 0.7s linear infinite;
+}
+.ds-spinner { color: var(--accent); }
+.ds-spinner.lg { --ds-spinner-size: var(--icon-lg); }
+.ds-btn.busy, [data-slot='button'].busy { pointer-events: none; }
+
+/* ---------- Dialog (Bestätigungs-Layer) ---------- */
+/* <dialog class="ds-dialog"> per showModal(): Fokusfalle, Esc und inerter Hintergrund kommen vom Browser.
+   Aufbau: .ds-dialog-body > .ds-dialog-title, .ds-dialog-quote?, .ds-dialog-text?, .ds-dialog-error, .ds-dialog-actions.
+   Schließen oben rechts: <button class="ds-btn ghost sm icon ds-dialog-close"><svg class="ds-icon"><use href="…#x"/></svg></button> (ohne .icon bleibt es ein normaler Button).
+   Mobil (<=600px) als Bottom-Sheet mit Buttons in Daumenhöhe, sonst zentriert. */
+.ds-dialog {
+  width: min(36rem, calc(100% - var(--space-6))); max-width: none; padding: 0; margin: auto;
+  background: var(--bg-elevated); color: var(--text);
+  border: 1px solid var(--border-strong); border-radius: var(--r-lg); box-shadow: var(--sh-lg);
+}
+.ds-dialog[open] { animation: ds-pop-in var(--transition) both; }
+.ds-dialog::backdrop { background: color-mix(in srgb, var(--bg) 65%, transparent); backdrop-filter: blur(4px); animation: ds-fade-in var(--transition) both; }
+.ds-dialog-body { display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-5); max-height: 85vh; overflow-y: auto; }
+.ds-dialog-close.icon { position: absolute; top: var(--space-2); right: var(--space-2); z-index: 1; }
+.ds-dialog-title { margin: 0; font-size: var(--fs-lg); font-weight: 700; line-height: var(--leading-tight); letter-spacing: -0.01em; }
+.ds-dialog-quote {
+  margin: 0; padding: var(--space-2) var(--space-3);
+  border-left: 3px solid var(--accent); border-radius: var(--r-sm); background: var(--accent-glow);
+  font-size: var(--fs-base); line-height: var(--leading-normal); overflow-wrap: anywhere;
+}
+.ds-dialog-text { margin: 0; font-size: var(--fs-sm); line-height: var(--leading-normal); color: var(--text-dim); }
+.ds-dialog-error { margin: 0; font-size: var(--fs-sm); color: var(--bad); overflow-wrap: anywhere; }
+.ds-dialog-error:empty { display: none; }
+.ds-dialog-actions { display: flex; justify-content: flex-end; gap: var(--space-2); margin-top: var(--space-2); }
+@media (min-width: 601px) { .ds-dialog.wide { width: min(56rem, calc(100% - var(--space-6))); } }
+.ds-sheet-handle { display: none; }
+@media (max-width: 600px) {
+  .ds-dialog {
+    width: 100%; margin: auto 0 0; border-bottom: 0; border-radius: var(--r-lg) var(--r-lg) 0 0;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .ds-dialog[open] { animation-name: ds-sheet-in; }
+  /* Opt-in: <div class="ds-sheet-handle"> als erstes Kind = Griff zum Wegwischen, dafür kein Schließen-Button (.ds-dialog-close).
+     Geste per App-JS: am Griff ziehen setzt transform am Dialog, ab ~1/4 Höhe wegschnappen und close(), sonst zurück. */
+  .ds-sheet-handle { /* Griff-Fläche ragt unsichtbar in das Body-Padding, damit sie daumengroß ist */
+    display: block; position: relative; z-index: 1; padding: var(--space-3) 0 var(--space-5);
+    margin-bottom: calc(var(--space-5) * -1); touch-action: none; cursor: grab;
+  }
+  .ds-sheet-handle::before {
+    content: ''; display: block; width: var(--space-7); height: var(--space-1); margin: 0 auto;
+    border-radius: var(--r-full); background: var(--border-strong);
+  }
+  .ds-dialog:has(.ds-sheet-handle) .ds-dialog-close { display: none; }
+  .ds-dialog-actions { flex-direction: column-reverse; }
+  .ds-dialog-actions .ds-btn { width: 100%; height: calc(var(--control-h) * 1.375); font-size: var(--fs-base); } /* 44px Touch-Ziel */
+}
+
+/* ---------- Toast ---------- */
+/* Container .ds-toasts (einmal pro Seite, ohne eigenes aria-live: jeder Toast ist selbst Live-Region, role="status" bzw. role="alert" bei error)
+   mit .ds-toast[.warn|.error|.info] > .ds-toast-text + Schließen-Button (aria-hidden am Icon).
+   Unten mittig; mobil über der .ds-fab. Abbau: Klasse .leaving setzen und nach der Animation entfernen. */
+.ds-toasts {
+  position: fixed; left: 50%; bottom: calc(var(--space-4) + env(safe-area-inset-bottom)); z-index: var(--z-toast);
+  width: min(26rem, calc(100% - var(--space-6))); transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: stretch; gap: var(--space-2); pointer-events: none;
+}
+.ds-toast {
+  display: flex; align-items: center; gap: var(--space-2); pointer-events: auto;
+  padding: var(--space-2) var(--space-2) var(--space-2) var(--space-4);
+  background: var(--bg-elevated); color: var(--text);
+  border: 1px solid var(--border-strong); border-left: 3px solid var(--good); border-radius: var(--r-md); box-shadow: var(--sh-lg);
+  font-size: var(--fs-sm); line-height: var(--leading-normal);
+  animation: ds-toast-in var(--transition) both;
+}
+.ds-toast.warn { border-left-color: var(--warn); }
+.ds-toast.error { border-left-color: var(--bad); }
+.ds-toast.info { border-left-color: var(--info); }
+.ds-toast-text { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.ds-toast.leaving { animation: ds-toast-out var(--transition-fast) both; }
+@media (max-width: 600px) {
+  .ds-toasts { bottom: calc(var(--space-8) + var(--space-5) + env(safe-area-inset-bottom)); }
+}
+
+@keyframes ds-spin { to { transform: rotate(360deg); } }
+@keyframes ds-fade-in { from { opacity: 0; } }
+@keyframes ds-pop-in { from { opacity: 0; transform: translateY(var(--space-2)) scale(0.97); } }
+@keyframes ds-sheet-in { from { transform: translateY(100%); } }
+@keyframes ds-toast-in { from { opacity: 0; transform: translateY(var(--space-4)); } }
+@keyframes ds-toast-out { to { opacity: 0; transform: scale(0.95); } }
+/* Reduced motion: all animations and transitions collapse to ~0 ms (end states stay, so toasts/dialogs still appear and leave).
+   The spinner is the exception: it stays visible, just slower. */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after, ::backdrop {
+    animation-duration: 0.01ms !important; animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important; scroll-behavior: auto !important;
+  }
+  .ds-btn:active:not(:disabled) { transform: none; }
+  .ds-spinner, .ds-btn.busy::before, [data-slot='button'].busy::before { animation-duration: 2s !important; animation-iteration-count: infinite !important; }
+}
+
+/* Code-Look: Markdown-Text in Festbreitenschrift mit Highlighting.
+   Bearbeiten: transparente <textarea> über einem <pre class="ds-code editing"> (gleiche Metriken). */
+.ds-code {
+  margin: 0; padding: var(--space-3); box-sizing: border-box;
+  font-family: var(--ff-mono); font-size: var(--fs-sm); line-height: var(--leading-normal);
+  color: var(--text-dim); background: var(--bg-sidebar);
+  border: 1px solid var(--border); border-radius: var(--r-lg);
+  white-space: pre-wrap; overflow-wrap: anywhere; tab-size: 2;
+}
+.ds-code.editing { background: var(--bg); border-color: var(--accent); }
+.ds-code-wrap { position: relative; display: flex; flex-direction: column; min-height: 0; }
+.ds-code-wrap > .ds-code { flex: 1; min-height: 0; overflow: hidden; scrollbar-gutter: stable; }
+.ds-code-wrap > textarea {
+  position: absolute; inset: 0; box-sizing: border-box; width: 100%; height: 100%;
+  margin: 0; padding: var(--space-3); border: 1px solid transparent; outline: none; resize: none;
+  font: inherit; font-family: var(--ff-mono); font-size: var(--fs-sm); line-height: var(--leading-normal);
+  white-space: pre-wrap; overflow-wrap: anywhere; tab-size: 2; overflow: auto; scrollbar-gutter: stable;
+  color: transparent; caret-color: var(--text); background: transparent;
+}
+.ds-code-wrap > textarea::selection { background: var(--accent-glow); }
+.ds-code-h { color: var(--accent-bright); font-weight: 600; }
+.ds-code-fence { color: var(--text-muted); }
+.ds-code-inline { color: var(--sig-green); }
+.ds-code-link { color: var(--sig-blue); }
+.ds-code-path { color: var(--sig-orange); }
+a.ds-code-link, a.ds-code-path { text-decoration: none; }
+a.ds-code-link:hover, a.ds-code-path:hover { text-decoration: underline; }
+.ds-code-check { color: var(--sig-yellow); }
+
+/* ---------- Facts (definition list) ---------- */
+/* <dl class="ds-facts"><dt>Label</dt><dd>Value</dd>…</dl>: label left, value left. .split pushes the values to the right edge (amounts);
+   <dt class="total"> and <dd class="total"> form a bold sum row. */
+.ds-facts { display: grid; grid-template-columns: auto 1fr; gap: var(--space-1) var(--space-3); margin: 0; font-size: var(--fs-sm); }
+.ds-facts dt { color: var(--text-muted); }
+.ds-facts dd { margin: 0; overflow-wrap: anywhere; }
+.ds-facts.split { grid-template-columns: 1fr auto; }
+.ds-facts.split dd { text-align: right; font-variant-numeric: tabular-nums; }
+.ds-facts .total { font-weight: 700; color: var(--text); border-top: 1px solid var(--border); padding-top: var(--space-1); }
+
+/* ---------- KPI ---------- */
+/* <div class="ds-kpis"><div class="ds-kpi"><div class="ds-kpi-label">…</div><div class="ds-stat">…</div><div class="ds-kpi-sub">…</div></div>…</div>.
+   Grid fills the row with equal columns; .hero spans two columns with a larger number. Plain .ds-card children also work. */
+.ds-kpis { display: grid; gap: var(--space-3); grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr)); }
+.ds-kpi {
+  display: flex; flex-direction: column; gap: var(--space-1); min-width: 0; padding: var(--space-4);
+  background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--r-md); box-shadow: var(--sh-md);
+}
+.ds-kpis .ds-stat { font-size: var(--fs-xl); overflow-wrap: anywhere; }
+.ds-kpi.hero { grid-column: span 2; }
+.ds-kpi.hero .ds-stat { font-size: var(--fs-2xl); }
+.ds-kpi-label { font-size: var(--fs-xs); color: var(--text-dim); }
+.ds-kpi-sub { font-size: var(--fs-xs); color: var(--text-muted); }
+
+/* ---------- Status level ---------- */
+/* Colors an icon or text by level: .ds-lvl (grey), .ok/.good, .info, .warn, .bad. With .edge on a card: colored left edge, text stays normal.
+   Never the only carrier of meaning: pair it with an icon shape or a word. */
+.ds-lvl { --lvl: var(--sig-grey); color: var(--lvl); }
+.ds-lvl:is(.ok, .good) { --lvl: var(--good); }
+.ds-lvl.info { --lvl: var(--info); }
+.ds-lvl.warn { --lvl: var(--warn); }
+.ds-lvl.bad { --lvl: var(--bad); }
+.ds-lvl.edge { color: inherit; border-left: 3px solid var(--lvl); }
+
+/* ---------- Menü (Popover) ---------- */
+/* <div class="ds-menu-wrap"><button aria-haspopup="true" aria-expanded="false">…</button>
+     <div class="ds-menu" hidden><ul class="ds-menu-list"><li class="ds-menu-item on"><svg class="ds-icon"/>Label</li></ul><div class="ds-menu-foot">…</div></div></div>.
+   Open/close per hidden attribute in app JS; .on marks the selected entry (check icon). */
+.ds-menu-wrap { position: relative; }
+.ds-menu {
+  position: absolute; top: calc(100% + var(--space-1)); left: 0; z-index: var(--z-overlay); min-width: 15rem;
+  background: var(--bg-elevated); border: 1px solid var(--border-strong); border-radius: var(--r-md); box-shadow: var(--sh-md);
+}
+.ds-menu[hidden] { display: none; }
+.ds-menu-list { list-style: none; margin: 0; padding: var(--space-1); }
+.ds-menu-item { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-2); border-radius: var(--r-md); cursor: pointer; }
+.ds-menu-item:hover { background: var(--bg-hover); }
+.ds-menu-item .ds-icon { visibility: hidden; }
+.ds-menu-item.on .ds-icon { visibility: visible; }
+.ds-menu-foot { display: flex; flex-direction: column; gap: var(--space-1); padding: var(--space-2); border-top: 1px solid var(--border); }
+.ds-menu-foot label { display: flex; justify-content: space-between; align-items: center; gap: var(--space-2); color: var(--text-dim); }
+
+/* ---------- Banner ---------- */
+/* Permanent notice inside the page (unlike the toast, it stays): .ds-banner[.warn|.bad], optional leading .ds-icon, then text. */
+.ds-banner {
+  --c: var(--info);
+  display: flex; align-items: flex-start; gap: var(--space-3); padding: var(--space-3) var(--space-4);
+  background: color-mix(in srgb, var(--c) 10%, var(--bg-elevated)); border: 1px solid var(--border); border-left: 3px solid var(--c);
+  border-radius: var(--r-md); font-size: var(--fs-sm); line-height: var(--leading-normal);
+}
+.ds-banner.warn { --c: var(--warn); }
+.ds-banner.bad { --c: var(--bad); }
+.ds-banner > .ds-icon { margin-top: var(--space-0); color: var(--c); }
+
+/* ---------- Lagebild (Fokus-Ansicht) ---------- */
+/* Seiten-Lead: <header class="ds-lead"><p class="ds-lead-when">Donnerstag, 19. November</p><h1>Lagezeile</h1><p class="ds-lead-sub">Zusatz</p></header> */
+.ds-lead { max-width: 44rem; margin-bottom: var(--space-3); }
+.ds-lead-when { margin: 0 0 var(--space-3); font-size: var(--fs-sm); color: var(--text-dim); }
+.ds-lead > h1 { margin: 0; font-size: var(--fs-3xl); line-height: var(--leading-tight); font-weight: 700; letter-spacing: -0.02em; }
+.ds-lead-sub { margin: var(--space-3) 0 0; font-size: var(--fs-lg); color: var(--text-dim); }
+@media (max-width: 600px) { .ds-lead > h1 { font-size: var(--fs-xl); } .ds-lead-sub { font-size: var(--fs-md); } }
+
+/* Gruppe: <section class="ds-group"><h2 class="ds-group-title">Braucht dich <span>3</span></h2> … .ds-line … </section> */
+.ds-group { display: flex; flex-direction: column; }
+.ds-group-title { margin: 0 0 var(--space-2); font-size: var(--fs-lg); font-weight: 600; }
+.ds-group-title > span { color: var(--text-dim); font-weight: 400; }
+
+/* Zeile mit Glyph links, Text und Aktionen rechts (mobil: Aktionen unter dem Text, volle Breite, 44 px):
+   <div class="ds-line [calm]"><span class="ds-line-glyph ds-lvl bad"><svg class="ds-icon"/></span>
+   <div><div class="ds-line-title">…</div><div class="ds-line-meta">…</div></div>
+   <div class="ds-line-actions"><button class="ds-btn">…</button></div></div> */
+.ds-line {
+  display: grid; grid-template-columns: var(--icon-lg) minmax(0, 1fr) auto; gap: var(--space-3); align-items: start;
+  padding: var(--space-4) 0; border-top: 1px solid var(--border);
+}
+.ds-line-glyph { padding-top: var(--space-1); }
+.ds-line-title { font-size: var(--fs-md); font-weight: 600; }
+.ds-line-meta { margin-top: var(--space-1); font-size: var(--fs-sm); color: var(--text-dim); overflow-wrap: anywhere; }
+.ds-line-actions { display: flex; flex-wrap: wrap; gap: var(--space-2); justify-content: flex-end; }
+.ds-line.calm { padding: var(--space-3) 0; }
+.ds-line.calm .ds-line-title { font-size: var(--fs-base); font-weight: 500; }
+@media (max-width: 600px) {
+  .ds-line { grid-template-columns: var(--icon-lg) minmax(0, 1fr); }
+  .ds-line-actions { grid-column: 2; justify-content: stretch; }
+  .ds-line-actions .ds-btn { flex: 1 1 100%; height: calc(var(--control-h) * 1.375); font-size: var(--fs-base); }
+}
+
+/* Hinweiskarte "Als Nächstes": <div class="ds-next"><div class="ds-next-text"><b>Titel</b><span>Meta</span></div><button class="ds-btn">Befehl kopieren</button></div> */
+.ds-next {
+  display: flex; flex-wrap: wrap; gap: var(--space-4); align-items: center; padding: var(--space-4) var(--space-5);
+  background: var(--bg-elevated); border: 1px solid var(--border); border-radius: var(--r-lg);
+}
+.ds-next-text { flex: 1 1 16rem; min-width: 0; display: flex; flex-direction: column; gap: var(--space-1); }
+.ds-next-text > b { font-size: var(--fs-lg); font-weight: 600; }
+.ds-next-text > span { font-size: var(--fs-sm); color: var(--text-dim); }
+@media (max-width: 600px) { .ds-next > .ds-btn { width: 100%; height: calc(var(--control-h) * 1.375); font-size: var(--fs-base); } }
+
+/* Messwert mit Balken: <div class="ds-meter"><span class="ds-meter-name">CPU</span><span class="ds-meter-value">2,2<small>%</small></span>
+   <span class="ds-meter-sub">24 Kerne</span><div class="ds-progress" style="--v:.022"><span></span></div></div> */
+.ds-meter { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-0) var(--space-3); align-items: baseline; }
+.ds-meter-name { font-size: var(--fs-base); font-weight: 500; }
+.ds-meter-value { font-size: var(--fs-xl); font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+.ds-meter-value > small { margin-left: var(--space-1); font-size: var(--fs-sm); font-weight: 500; color: var(--text-dim); letter-spacing: 0; }
+.ds-meter-sub { grid-column: 1 / -1; font-size: var(--fs-xs); color: var(--text-dim); }
+.ds-meter > .ds-progress { grid-column: 1 / -1; height: var(--space-1); margin-top: var(--space-1); }
+
+/* Verteilungsbalken: <div class="ds-segbar" role="img" aria-label="…"><i style="--v:1; --c:var(--border-control)"></i><i style="--v:5; --c:var(--good)"></i></div>
+   danach <div class="ds-segbar-legend"><span><b>1</b>offen</span>…</div> */
+.ds-segbar { display: flex; gap: var(--space-0); height: var(--space-1); border-radius: var(--r-sm); overflow: hidden; background: var(--bg-active); }
+.ds-segbar > i { display: block; height: 100%; flex: var(--v, 1) 1 0; background: var(--c, var(--accent)); }
+.ds-segbar-legend {
+  display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-1) var(--space-4); margin-top: var(--space-3);
+  font-size: var(--fs-sm); color: var(--text-dim);
+}
+.ds-segbar-legend > span > b { margin-right: var(--space-1); color: var(--text); font-variant-numeric: tabular-nums; }
+
+/* ---------- Mobile Muster ---------- */
+/* KPI-Raster: <div class="ds-kpis two"> hält mobil zwei Spalten (statt auto-fit). */
+@media (max-width: 600px) { .ds-kpis.two { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* Tab-Raster 2x2 mit Zähler (z. B. Kanban-Spalten): <div class="ds-tabgrid" role="tablist"><button role="tab" aria-selected="true">Offen <b>3</b></button>…</div> */
+.ds-tabgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-2); }
+.ds-tabgrid > button {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); min-height: calc(var(--control-h) * 1.375);
+  padding: 0 var(--space-3); border: 1px solid var(--border-strong); border-radius: var(--r-md); background: var(--bg-elevated);
+  color: var(--text-dim); font: inherit; font-size: var(--fs-sm); font-weight: 500; cursor: pointer;
+}
+.ds-tabgrid > button > b { font-variant-numeric: tabular-nums; color: var(--text); }
+.ds-tabgrid > button[aria-selected='true'] { background: var(--bg-active); border-color: var(--accent); color: var(--accent-bright); }
+.ds-tabgrid > button[aria-selected='true'] > b { color: inherit; }
+@media (min-width: 601px) { .ds-tabgrid { grid-template-columns: repeat(4, minmax(0, 1fr)); } }
+
+/* Menüpanel unter dem Header (Burger): <div class="ds-navpanel" hidden><div class="ds-navpanel-label">Ansicht</div>…<button class="ds-navpanel-item">…</button></div>
+   Öffnen/Schließen per hidden-Attribut in der App; liegt unter .ds-header (sticky) und überdeckt den Inhalt. */
+.ds-navpanel {
+  position: sticky; top: var(--header-height); z-index: var(--z-sticky); display: flex; flex-direction: column; gap: var(--space-1);
+  padding: var(--space-3) var(--page-pad) var(--space-4); background: var(--bg-elevated); border-bottom: 1px solid var(--border-strong); box-shadow: var(--sh-md);
+}
+.ds-navpanel[hidden] { display: none; }
+.ds-navpanel-label { margin-top: var(--space-2); font-size: var(--fs-xs); font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-muted); }
+.ds-navpanel-item {
+  display: flex; align-items: center; gap: var(--space-3); width: 100%; min-height: calc(var(--control-h) * 1.375); padding: 0 var(--space-3);
+  border: 0; border-radius: var(--r-md); background: transparent; color: var(--text); font: inherit; font-size: var(--fs-base); text-align: left; cursor: pointer;
+}
+.ds-navpanel-item:hover, .ds-navpanel-item:focus-visible { background: var(--bg-hover); }
+.ds-navpanel-item[aria-current='true'] { background: var(--bg-active); color: var(--accent-bright); }

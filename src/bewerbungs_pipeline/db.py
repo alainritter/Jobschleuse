@@ -1,0 +1,438 @@
+import hashlib
+import json
+import sqlite3
+from datetime import UTC, date, datetime
+from pathlib import Path
+from typing import NamedTuple
+
+from .models import JobItem
+
+STATUSES = {"new", "selected", "rejected"}
+
+# Whitelist statt String-Interpolation: `sort` kommt aus der URL und darf
+# niemals direkt in die SQL-Anweisung wandern.
+_SORT_SPALTEN = {
+    "id": "id",
+    "frische": "COALESCE(changed_at, posted_at)",
+    "distance_km": "distance_km",
+    "company": "company",
+    "title": "title",
+    "score": "score",
+}
+
+SCHEMA_VERSION = 3
+
+SCHEMA = """
+CREATE TABLE IF NOT EXISTS jobs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    url TEXT NOT NULL UNIQUE,
+    dedupe_hash TEXT NOT NULL UNIQUE,
+    source_ref TEXT,
+    title TEXT NOT NULL,
+    company TEXT NOT NULL,
+    company_website TEXT,
+    location TEXT NOT NULL,
+    source TEXT NOT NULL,
+    posted_at TEXT,
+    contact_name TEXT,
+    contact_email TEXT,
+    description_md TEXT NOT NULL DEFAULT '',
+    scraped_at TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'new',
+    job_kind TEXT,
+    employer_kind TEXT,
+    source_partner TEXT,
+    external_host TEXT,
+    homeoffice TEXT,
+    salary TEXT,
+    contract TEXT,
+    worktime TEXT,
+    distance_km INTEGER,
+    start_date TEXT,
+    changed_at TEXT,
+    street TEXT,
+    plz TEXT,
+    education TEXT,
+    employer_hash TEXT,
+    gone_at TEXT,
+    score INTEGER,
+    score_reason TEXT,
+    tags TEXT,
+    rated_at TEXT
+)
+"""
+
+# Spalten, die Bestandsdatenbanken aus Schema-Version 1 nachgeruestet bekommen.
+NEUE_SPALTEN_V2 = (
+    ("job_kind", "TEXT"),
+    ("employer_kind", "TEXT"),
+    ("source_partner", "TEXT"),
+    ("external_host", "TEXT"),
+    ("homeoffice", "TEXT"),
+    ("salary", "TEXT"),
+    ("contract", "TEXT"),
+    ("worktime", "TEXT"),
+    ("distance_km", "INTEGER"),
+    ("start_date", "TEXT"),
+    ("changed_at", "TEXT"),
+    ("street", "TEXT"),
+    ("plz", "TEXT"),
+    ("education", "TEXT"),
+    ("employer_hash", "TEXT"),
+    ("gone_at", "TEXT"),
+)
+
+# Bewertungen eines externen Agents (jobs rate), ab Schema-Version 3.
+NEUE_SPALTEN_V3 = (
+    ("score", "INTEGER"),
+    ("score_reason", "TEXT"),
+    ("tags", "TEXT"),
+    ("rated_at", "TEXT"),
+)
+
+SCHEMA_APPLICATIONS = """
+CREATE TABLE IF NOT EXISTS applications (
+    id            INTEGER PRIMARY KEY AUTOINCREMENT,
+    job_id        INTEGER NOT NULL REFERENCES jobs(id),
+    template_path TEXT NOT NULL,
+    created_at    TEXT NOT NULL,
+    updated_at    TEXT NOT NULL,
+    UNIQUE(job_id)
+)
+"""
+
+SCHEMA_APPLICATION_SLOTS = """
+CREATE TABLE IF NOT EXISTS application_slots (
+    application_id INTEGER NOT NULL REFERENCES applications(id) ON DELETE CASCADE,
+    slot           TEXT NOT NULL,
+    value          TEXT NOT NULL,
+    source         TEXT NOT NULL,
+    updated_at     TEXT NOT NULL,
+    PRIMARY KEY (application_id, slot)
+)
+"""
+
+
+def _spalten_nachruesten(conn: sqlite3.Connection, spalten) -> None:
+    # Spaltenweise statt Tabellenneubau: die Bestandsdatenbank haengt an
+    # Bewerbungen, die einen Fremdschluessel auf jobs.id halten.
+    vorhanden = {
+        zeile["name"] for zeile in conn.execute("PRAGMA table_info(jobs)").fetchall()
+    }
+    for name, typ in spalten:
+        if name not in vorhanden:
+            conn.execute(f"ALTER TABLE jobs ADD COLUMN {name} {typ}")
+
+
+def _migrate(conn: sqlite3.Connection) -> None:
+    """Führt Schemaschritte aus, die über CREATE TABLE hinausgehen."""
+    version = conn.execute("PRAGMA user_version").fetchone()[0]
+    if version < 1:
+        conn.execute("UPDATE jobs SET status = 'selected' WHERE status = 'generated'")
+    if version < 2:
+        _spalten_nachruesten(conn, NEUE_SPALTEN_V2)
+    if version < 3:
+        _spalten_nachruesten(conn, NEUE_SPALTEN_V3)
+    if version < SCHEMA_VERSION:
+        conn.execute(f"PRAGMA user_version = {SCHEMA_VERSION}")
+        conn.commit()
+
+
+def connect(db_path: Path) -> sqlite3.Connection:
+    db_path.parent.mkdir(parents=True, exist_ok=True)
+    # check_same_thread=False, weil FastAPI die Verbindung einer Anfrage in
+    # einem Arbeits-Thread öffnet und in einem anderen wieder schließt.
+    # Ungefährlich: jede Anfrage und jeder Hintergrundlauf bekommt eine eigene
+    # Verbindung, geteilt wird keine.
+    conn = sqlite3.connect(db_path, check_same_thread=False)
+    conn.row_factory = sqlite3.Row
+    conn.execute("PRAGMA foreign_keys = ON")
+    conn.execute(SCHEMA)
+    conn.execute(SCHEMA_APPLICATIONS)
+    conn.execute(SCHEMA_APPLICATION_SLOTS)
+    _migrate(conn)
+    return conn
+
+
+def dedupe_hash(item: JobItem) -> str:
+    key = "|".join(s.strip().lower() for s in (item.company, item.title, item.location))
+    return hashlib.sha256(key.encode()).hexdigest()
+
+
+def insert_job(conn: sqlite3.Connection, item: JobItem) -> bool:
+    cur = conn.execute(
+        """INSERT OR IGNORE INTO jobs
+           (url, dedupe_hash, source_ref, title, company, company_website,
+            location, source, posted_at, contact_name, contact_email,
+            description_md, scraped_at, job_kind, employer_kind, source_partner,
+            external_host, homeoffice, salary, contract, worktime, distance_km,
+            start_date, changed_at, street, plz, education, employer_hash, gone_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                   ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+        (
+            item.url,
+            dedupe_hash(item),
+            item.source_ref,
+            item.title,
+            item.company,
+            item.company_website,
+            item.location,
+            item.source,
+            item.posted_at.isoformat() if item.posted_at else None,
+            item.contact_name,
+            item.contact_email,
+            item.description_md,
+            item.scraped_at.isoformat(),
+            item.job_kind,
+            item.employer_kind,
+            item.source_partner,
+            item.external_host,
+            item.homeoffice,
+            item.salary,
+            item.contract,
+            item.worktime,
+            item.distance_km,
+            item.start_date.isoformat() if item.start_date else None,
+            item.changed_at.isoformat() if item.changed_at else None,
+            item.street,
+            item.plz,
+            item.education,
+            item.employer_hash,
+            item.gone_at.isoformat() if item.gone_at else None,
+        ),
+    )
+    conn.commit()
+    return cur.rowcount == 1
+
+
+def list_jobs(conn: sqlite3.Connection, status: str | None = None) -> list[sqlite3.Row]:
+    if status is not None:
+        return conn.execute(
+            "SELECT * FROM jobs WHERE status = ? ORDER BY id", (status,)
+        ).fetchall()
+    return conn.execute("SELECT * FROM jobs ORDER BY id").fetchall()
+
+
+def get_job(conn: sqlite3.Connection, job_id: int) -> sqlite3.Row | None:
+    return conn.execute("SELECT * FROM jobs WHERE id = ?", (job_id,)).fetchone()
+
+
+def set_status(conn: sqlite3.Connection, job_id: int, status: str) -> None:
+    if status not in STATUSES:
+        raise ValueError(f"Unbekannter Status: {status}")
+    conn.execute("UPDATE jobs SET status = ? WHERE id = ?", (status, job_id))
+    conn.commit()
+
+
+def update_description(conn: sqlite3.Connection, job_id: int, text: str) -> None:
+    conn.execute("UPDATE jobs SET description_md = ? WHERE id = ?", (text, job_id))
+    conn.commit()
+
+
+def set_status_bulk(conn: sqlite3.Connection, job_ids: list[int], status: str) -> int:
+    """Setzt den Status mehrerer Stellen in einer Transaktion."""
+    if status not in STATUSES:
+        raise ValueError(f"Unbekannter Status: {status}")
+    if not job_ids:
+        return 0
+    platzhalter = ",".join("?" * len(job_ids))
+    cur = conn.execute(
+        f"UPDATE jobs SET status = ? WHERE id IN ({platzhalter})",
+        (status, *job_ids),
+    )
+    conn.commit()
+    return cur.rowcount
+
+
+def _filter_sql(
+    status: str | None,
+    q: str | None,
+    ort: str | None,
+    mit_verschwundenen: bool,
+    unbewertet: bool,
+    min_score: int | None,
+) -> tuple[str, list[str | int]]:
+    """WHERE-Klausel und Parameter der Stellenfilter (siehe `suche_jobs`)."""
+    sql = " WHERE 1=1"
+    werte: list[str | int] = []
+    if not mit_verschwundenen:
+        sql += " AND gone_at IS NULL"
+    if status:
+        sql += " AND status = ?"
+        werte.append(status)
+    if q:
+        sql += " AND (LOWER(title) LIKE ? OR LOWER(company) LIKE ?)"
+        werte.extend([f"%{q.lower()}%"] * 2)
+    if ort:
+        sql += " AND LOWER(location) LIKE ?"
+        werte.append(f"%{ort.lower()}%")
+    if unbewertet:
+        sql += " AND score IS NULL"
+    if min_score is not None:
+        sql += " AND score >= ?"
+        werte.append(min_score)
+    return sql, werte
+
+
+def suche_jobs(
+    conn: sqlite3.Connection,
+    status: str | None = None,
+    q: str | None = None,
+    ort: str | None = None,
+    mit_verschwundenen: bool = False,
+    unbewertet: bool = False,
+    min_score: int | None = None,
+    sort: str = "id",
+    order: str = "desc",
+    limit: int | None = None,
+) -> list[sqlite3.Row]:
+    """Stellenliste mit optionalen Filtern.
+
+    `q` sucht in Titel und Firma, `ort` im Ort — beides ohne
+    Beachtung der Groß-/Kleinschreibung. Stellen, deren Anzeige bei der
+    Quelle verschwunden ist, bleiben aussen vor, solange
+    `mit_verschwundenen` nicht gesetzt ist. `unbewertet` beschränkt auf
+    Stellen ohne Score, `min_score` auf Stellen mit mindestens diesem Score.
+    `sort` läuft über eine feste
+    Spalten-Whitelist; unbekannte Werte fallen still auf `id` zurück.
+    """
+    spalte = _SORT_SPALTEN.get(sort, "id")
+    richtung = "ASC" if order == "asc" else "DESC"
+    where, werte = _filter_sql(status, q, ort, mit_verschwundenen, unbewertet, min_score)
+    sql = f"SELECT * FROM jobs{where} ORDER BY {spalte} {richtung}"
+    if limit is not None:
+        sql += " LIMIT ?"
+        werte.append(limit)
+    return conn.execute(sql, werte).fetchall()
+
+
+def zaehle_pro_status(
+    conn: sqlite3.Connection,
+    q: str | None = None,
+    ort: str | None = None,
+    mit_verschwundenen: bool = False,
+) -> dict[str, int]:
+    """Stellen je Status unter denselben Filtern wie `suche_jobs`."""
+    where, werte = _filter_sql(None, q, ort, mit_verschwundenen, False, None)
+    zeilen = conn.execute(
+        f"SELECT status, COUNT(*) FROM jobs{where} GROUP BY status", werte
+    ).fetchall()
+    zaehler = dict.fromkeys(STATUSES, 0)
+    zaehler.update({status: anzahl for status, anzahl in zeilen})
+    return zaehler
+
+
+def offene_referenzen(conn: sqlite3.Connection) -> list[str]:
+    """Referenznummern offener Arbeitsagentur-Stellen, die noch als verfügbar gelten.
+
+    Nur diese Quelle, weil die Referenznummern gegen die
+    Arbeitsagentur-API geprüft werden (`arbeitsagentur.check_alive`) —
+    Indeed-Referenzen wären dort nie auffindbar und würden fälschlich
+    als verschwunden markiert.
+    """
+    zeilen = conn.execute(
+        "SELECT source_ref FROM jobs"
+        " WHERE source_ref IS NOT NULL AND gone_at IS NULL"
+        " AND source = 'arbeitsagentur' ORDER BY id"
+    ).fetchall()
+    return [zeile["source_ref"] for zeile in zeilen]
+
+
+def mark_gone(conn: sqlite3.Connection, refnrs: set[str]) -> int:
+    """Markiert die genannten Stellen als bei der Quelle verschwunden."""
+    if not refnrs:
+        return 0
+    jetzt = datetime.now(UTC).isoformat()
+    platzhalter = ",".join("?" * len(refnrs))
+    cur = conn.execute(
+        f"UPDATE jobs SET gone_at = ?"
+        f" WHERE gone_at IS NULL AND source_ref IN ({platzhalter})",
+        (jetzt, *sorted(refnrs)),
+    )
+    conn.commit()
+    return cur.rowcount
+
+
+def row_to_item(row: sqlite3.Row) -> JobItem:
+    return JobItem(
+        title=row["title"],
+        company=row["company"],
+        location=row["location"],
+        url=row["url"],
+        source=row["source"],
+        source_ref=row["source_ref"],
+        company_website=row["company_website"],
+        posted_at=date.fromisoformat(row["posted_at"]) if row["posted_at"] else None,
+        contact_name=row["contact_name"],
+        contact_email=row["contact_email"],
+        description_md=row["description_md"],
+        scraped_at=datetime.fromisoformat(row["scraped_at"]),
+        job_kind=row["job_kind"],
+        employer_kind=row["employer_kind"],
+        source_partner=row["source_partner"],
+        external_host=row["external_host"],
+        homeoffice=row["homeoffice"],
+        salary=row["salary"],
+        contract=row["contract"],
+        worktime=row["worktime"],
+        distance_km=row["distance_km"],
+        start_date=date.fromisoformat(row["start_date"]) if row["start_date"] else None,
+        changed_at=datetime.fromisoformat(row["changed_at"])
+        if row["changed_at"]
+        else None,
+        street=row["street"],
+        plz=row["plz"],
+        education=row["education"],
+        employer_hash=row["employer_hash"],
+        gone_at=datetime.fromisoformat(row["gone_at"]) if row["gone_at"] else None,
+    )
+
+
+class Rating(NamedTuple):
+    job_id: int
+    score: int
+    reason: str
+    tags: list[str]
+
+
+def _normalisiere_tags(tags: list[str]) -> list[str]:
+    ergebnis: list[str] = []
+    for tag in tags:
+        sauber = tag.strip().lower()
+        if sauber and sauber not in ergebnis:
+            ergebnis.append(sauber)
+    return ergebnis
+
+
+def set_ratings_bulk(conn: sqlite3.Connection, ratings: list[Rating]) -> int:
+    """Speichert Bewertungen in einer Transaktion; prüft alle Scores vorher.
+
+    Mehrere Bewertungen derselben Stelle: die letzte gewinnt. Zurück kommt
+    die Zahl der Eingaben, nicht die der geänderten Zeilen.
+    """
+    for rating in ratings:
+        if not 0 <= rating.score <= 100:
+            raise ValueError(f"Score muss zwischen 0 und 100 liegen: {rating.score}")
+    jetzt = datetime.now(UTC).isoformat()
+    conn.executemany(
+        "UPDATE jobs SET score = ?, score_reason = ?, tags = ?, rated_at = ?"
+        " WHERE id = ?",
+        [
+            (
+                r.score,
+                r.reason,
+                json.dumps(_normalisiere_tags(r.tags), ensure_ascii=False),
+                jetzt,
+                r.job_id,
+            )
+            for r in ratings
+        ],
+    )
+    conn.commit()
+    return len(ratings)
+
+
+def set_rating(
+    conn: sqlite3.Connection, job_id: int, score: int, reason: str, tags: list[str]
+) -> None:
+    set_ratings_bulk(conn, [Rating(job_id, score, reason, tags)])

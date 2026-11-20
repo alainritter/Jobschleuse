@@ -1,0 +1,71 @@
+import { useEffect, useState } from "react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { useDebouncedCallback } from "@/hooks/useDebouncedCallback";
+
+export interface FilterState {
+  status: string;
+  q: string;
+  ort: string;
+  verschwunden: boolean;
+}
+
+export type FilterPatch = Partial<Omit<FilterState, "status">>;
+
+interface Props {
+  value: FilterState;
+  /** Nur die geänderten Felder — ein verzögerter Aufruf darf nicht mit
+   * einem veralteten Gesamtstand die übrigen Filter zurücksetzen. */
+  onChange: (patch: FilterPatch) => void;
+}
+
+/** Text-Filter (Suche, Ort) laufen debounced — Checkbox sofort,
+ * wie im bisherigen HTMX-Formular (`hx-trigger="submit, change delay:300ms"`). */
+export function FilterSidebar({ value, onChange }: Props) {
+  const [q, setQ] = useState(value.q);
+  const [ort, setOrt] = useState(value.ort);
+  // Je Feld ein eigener Debounce: sonst verschluckt ein schneller Wechsel
+  // von „Suche“ nach „Ort“ die erste Eingabe.
+  const debouncedQ = useDebouncedCallback((wert: string) => onChange({ q: wert }), 300);
+  const debouncedOrt = useDebouncedCallback((wert: string) => onChange({ ort: wert }), 300);
+
+  useEffect(() => setQ(value.q), [value.q]);
+  useEffect(() => setOrt(value.ort), [value.ort]);
+
+  return (
+    <aside className="flex w-full shrink-0 flex-col gap-4 md:w-56">
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="filter-q">Suche</Label>
+        <Input
+          id="filter-q"
+          placeholder="Titel oder Firma"
+          value={q}
+          onChange={(event) => {
+            setQ(event.target.value);
+            debouncedQ(event.target.value);
+          }}
+        />
+      </div>
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="filter-ort">Ort</Label>
+        <Input
+          id="filter-ort"
+          placeholder="z. B. Darmstadt"
+          value={ort}
+          onChange={(event) => {
+            setOrt(event.target.value);
+            debouncedOrt(event.target.value);
+          }}
+        />
+      </div>
+      <label className="flex items-center gap-2 text-sm">
+        <Checkbox
+          checked={value.verschwunden}
+          onCheckedChange={(checked) => onChange({ verschwunden: checked === true })}
+        />
+        auch verschwundene zeigen
+      </label>
+    </aside>
+  );
+}

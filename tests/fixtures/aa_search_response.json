@@ -1,0 +1,36 @@
+{
+  "ergebnisliste": [
+    {
+      "stellenangebotsTitel": "Mechatroniker (m/w/d)",
+      "referenznummer": "10001-1000012345-S",
+      "firma": "AC Motoren GmbH",
+      "datumErsteVeroeffentlichung": "2026-07-01",
+      "stellenlokationen": [
+        {"adresse": {"plz": "64859", "ort": "Eppertshausen", "region": "Hessen"}}
+      ],
+      "externeURL": null,
+      "stellenangebotsart": "ARBEIT",
+      "arbeitszeitVollzeit": true,
+      "verguetungsangabe": "STUNDENLOHN",
+      "artDerVerguetung": "GEHALTSSPANNE",
+      "gehaltsspanneVon": 19.78,
+      "gehaltsspanneBis": 26.0,
+      "vertragsdauer": "UNBEFRISTET",
+      "homeofficemoeglich": false,
+      "entfernung": 42,
+      "eintrittszeitraum": { "von": "2026-09-01" },
+      "aenderungsdatum": "2026-08-10T18:05:28.461"
+    },
+    {
+      "stellenangebotsTitel": "Servicetechniker (m/w/d)",
+      "referenznummer": "10001-1000067890-S",
+      "firma": "Beispiel AG",
+      "datumErsteVeroeffentlichung": "2026-07-05",
+      "stellenlokationen": [
+        {"adresse": {"plz": "60311", "ort": "Frankfurt am Main", "region": "Hessen"}}
+      ],
+      "externeURL": "https://karriere.beispiel.de/job/42"
+    }
+  ],
+  "maxErgebnisse": 2
+}

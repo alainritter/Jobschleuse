@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Tests before every push. TODO: add `ruff check` and `ruff format --check` once the existing findings are cleaned up.
+set -euo pipefail
+cd "$(git rev-parse --show-toplevel)"
+uv run --quiet pytest -q

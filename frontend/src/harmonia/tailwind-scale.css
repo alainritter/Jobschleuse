@@ -1,0 +1,30 @@
+/* Schrift-, Radius- und Schatten-Skala für Tailwind – gemeinsam für tailwind.css und shadcn.css. */
+@theme static inline {
+  --font-sans: var(--ff-sans);
+  --font-mono: var(--ff-mono);
+
+  --text-xs: var(--fs-xs);
+  --text-xs--line-height: var(--leading-normal);
+  --text-sm: var(--fs-sm);
+  --text-sm--line-height: var(--leading-normal);
+  --text-base: var(--fs-base);
+  --text-base--line-height: var(--leading-normal);
+  --text-lg: var(--fs-md);
+  --text-lg--line-height: var(--leading-normal);
+  --text-xl: var(--fs-lg);
+  --text-xl--line-height: var(--leading-tight);
+  --text-2xl: var(--fs-xl);
+  --text-2xl--line-height: var(--leading-tight);
+  --text-3xl: var(--fs-2xl);
+  --text-3xl--line-height: var(--leading-tight);
+  --text-4xl: var(--fs-3xl);
+  --text-4xl--line-height: var(--leading-tight);
+
+  --radius-sm: var(--r-sm);
+  --radius-md: var(--r-md);
+  --radius-lg: var(--r-lg);
+  --radius-xl: var(--r-lg);
+  --radius-full: var(--r-full);
+
+  --shadow-card: var(--sh-md);
+}

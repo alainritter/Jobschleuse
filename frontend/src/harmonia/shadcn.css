@@ -1,0 +1,38 @@
+/* Harmonia – shadcn-Mapping direkt auf die Tokens (kein :root/.dark-Block nötig).
+   Ersetzt in der App die :root/.dark-Variablen UND die Farbzeilen im @theme inline.
+   Achtung: shadcn-`accent` = Hover-Fläche, DS-`--accent` = Cyan (-> `primary`). */
+@theme static inline {
+  --radius: var(--r-md);
+  --color-background: var(--bg);
+  --color-foreground: var(--text);
+  --color-card: var(--bg-elevated);
+  --color-card-foreground: var(--text);
+  --color-popover: var(--bg-elevated);
+  --color-popover-foreground: var(--text);
+  --color-primary: var(--accent);
+  --color-primary-foreground: var(--accent-fg);
+  --color-secondary: var(--bg-hover);
+  --color-secondary-foreground: var(--text);
+  --color-muted: var(--bg-active);
+  --color-muted-foreground: var(--text-dim);
+  --color-accent: var(--bg-hover);
+  --color-accent-foreground: var(--text);
+  --color-destructive: var(--bad);
+  --color-destructive-foreground: var(--bad-fg);
+  --color-border: var(--border);
+  --color-input: var(--border-strong);
+  --color-ring: var(--ring);
+  --color-chart-1: var(--accent);
+  --color-chart-2: var(--info);
+  --color-chart-3: var(--good);
+  --color-chart-4: var(--warn);
+  --color-chart-5: var(--bad);
+  --color-sidebar: var(--bg-sidebar);
+  --color-sidebar-foreground: var(--text);
+  --color-sidebar-primary: var(--accent);
+  --color-sidebar-primary-foreground: var(--accent-fg);
+  --color-sidebar-accent: var(--bg-hover);
+  --color-sidebar-accent-foreground: var(--text);
+  --color-sidebar-border: var(--border);
+  --color-sidebar-ring: var(--ring);
+}

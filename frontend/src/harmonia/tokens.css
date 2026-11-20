@@ -1,0 +1,303 @@
+/* Harmonia – Tokens. Einzige Quelle für Farben, Typo, Abstände, Layout.
+   Ohne data-theme folgt die Seite der System-Präferenz (Dark als Fallback); Dark/Light erzwingen per
+   [data-theme='dark'|'light'] oder .dark/.light. Der Light-Block steht zweimal (Attribut und Media-Query),
+   tests/test_designsystem.py prüft, dass beide gleich sind. */
+
+:root {
+  color-scheme: dark;
+
+  /* Flächen */
+  --bg: #0d1017;
+  --bg-sidebar: #080a0f;
+  --bg-elevated: #161b22;
+  --bg-hover: #1c232e;
+  --bg-active: #232b38;
+
+  /* Akzent */
+  --accent: #00c3ff;
+  --accent-bright: #4dd5ff;
+  --accent-dim: #0a6f8f;
+  --accent-fg: var(--bg);
+  --accent-glow: rgba(0, 195, 255, 0.12);
+
+  /* Text */
+  --text: #e1e6ea;
+  --text-dim: #94a0a8;
+  --text-muted: #84909a;
+
+  /* Linien */
+  --border: rgba(0, 195, 255, 0.1);
+  --border-strong: rgba(0, 195, 255, 0.2);
+  --ring: rgba(77, 213, 255, 0.5);
+  --border-control: #5f7380; /* Input/Select/Checkbox/Switch: >= 3:1 gegen --bg und --bg-elevated (WCAG 1.4.11) */
+
+  /* Status */
+  --good: #4caf50;
+  --bad: #dc4c3f;
+  --warn: #fab219;
+  --info: #3987e5;
+  --good-text: #55b659; /* *-text: Text auf Badge/Flächen, >= 4.5:1 (tests/test_designsystem.py) */
+  --bad-text: #e98c84;
+  --warn-text: var(--warn);
+  --info-text: #5d9dea;
+  --bad-fg: var(--bg); /* Text auf --bad-Fläche (shadcn destructive) */
+
+  /* Signalfarben (Chips, Markierungen; gedämpfter als Status) */
+  --sig-red: #e0736b;
+  --sig-yellow: #d9b44a;
+  --sig-green: #6fbf8a;
+  --sig-blue: #6fa3d9;
+  --sig-orange: #e39a58;
+  --sig-grey: var(--text-dim);
+
+  /* Kategorie-Palette (Graphen, Kategorien; Light-Themes mit dunkleren Varianten, mind. 3:1 auf --bg) */
+  --cat-1: var(--accent);
+  --cat-2: #b8cc88;
+  --cat-3: #88a0c0;
+  --cat-4: #7ba888;
+  --cat-5: #b888b8;
+  --cat-6: #d08868;
+  --cat-7: #c87878;
+  --cat-8: #68a8b8;
+  --cat-9: #c0a060;
+  --cat-10: #a88868;
+
+  /* Schatten */
+  --sh-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --sh-md: 0 4px 14px rgba(0, 0, 0, 0.4), 0 0 1px rgba(0, 195, 255, 0.08);
+  --sh-lg: 0 12px 32px rgba(0, 0, 0, 0.55), 0 0 2px rgba(0, 195, 255, 0.12);
+
+  /* Schrift */
+  --ff-sans: 'Satoshi', -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --ff-mono: ui-monospace, 'JetBrains Mono', 'Cascadia Mono', Menlo, Consolas, monospace;
+
+  --fs-xs: 0.75rem;   /* 12 – Meta, Labels, Badges */
+  --fs-sm: 0.8125rem; /* 13 – sekundärer UI-Text */
+  --fs-base: 0.875rem;/* 14 – Standard in Apps */
+  --fs-md: 1rem;      /* 16 – Fließtext/Artikel */
+  --fs-lg: 1.125rem;  /* 18 – Section-Titel */
+  --fs-xl: 1.5rem;    /* 24 – Seitentitel */
+  --fs-2xl: 2rem;     /* 32 – Kennzahlen/Display */
+  --fs-3xl: 2.5rem;   /* 40 – große Kennzahlen in Dashboard-Kacheln */
+
+  --leading-tight: 1.2;
+  --leading-normal: 1.5;
+  --leading-relaxed: 1.7;
+
+  /* Abstände (4px-Raster, --space-0 als Feinabstand für Chips/Kbd) */
+  --space-0: 0.125rem; /* 2 */
+  --space-1: 0.25rem;  /* 4 */
+  --space-2: 0.5rem;   /* 8 */
+  --space-3: 0.75rem;  /* 12 */
+  --space-4: 1rem;     /* 16 */
+  --space-5: 1.5rem;   /* 24 */
+  --space-6: 2rem;     /* 32 */
+  --space-7: 3rem;     /* 48 */
+  --space-8: 4rem;     /* 64 */
+
+  /* Form */
+  --r-sm: 4px;
+  --r-md: 8px;
+  --r-lg: 14px;
+  --r-full: 999px; /* Pills, Toggles */
+
+  /* Layout */
+  --sidebar-width: 16rem;   /* 256 */
+  --header-height: 3.25rem; /* 52 */
+  --page-pad: var(--space-5);
+  --content-max: 80rem;     /* 1280 – Dashboards/Tabellen */
+  --content-prose: 47.5rem; /* 760 – Lesetext */
+  --page-inset: max(var(--page-pad), calc((100% - var(--content-max)) / 2 + var(--page-pad))); /* Header-Innenabstand, fluchtet mit .ds-page */
+  --control-h: 2rem;        /* 32 – Button/Input-Höhe (wie Jobschleuse) */
+  --control-h-sm: 1.75rem;  /* 28 – kleine Buttons */
+  --icon-sm: 0.875rem;      /* 14 – Icons in kleinen Buttons, Spinner */
+  --icon-md: 1rem;          /* 16 – Standard-Icon (Buttons) */
+  --icon-lg: 1.5rem;        /* 24 – Tabbar, FAB */
+
+  /* Motion + Ebenen */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-fast: 150ms var(--ease-out);
+  --transition: 240ms var(--ease-out);
+  --z-sticky: 10;
+  --z-sidebar: 20;
+  --z-overlay: 30;
+  --z-toast: 50;
+}
+
+:root[data-theme='light'],
+:root.light {
+  color-scheme: light;
+  --bg: #f4f8fa;
+  --bg-sidebar: #e9f0f4;
+  --bg-elevated: #ffffff;
+  --bg-hover: #dde8ee;
+  --bg-active: #cfdfe8;
+  --accent: #006a8e;
+  --accent-bright: #00506b;
+  --accent-dim: #7fb3c6;
+  --accent-fg: #ffffff;
+  --accent-glow: rgba(0, 106, 142, 0.1);
+  --text: #1c2428;
+  --text-dim: #4a5860;
+  --text-muted: #5a6870;
+  --border: rgba(0, 106, 142, 0.15);
+  --border-strong: rgba(0, 106, 142, 0.32);
+  --ring: rgba(0, 106, 142, 0.45);
+  --border-control: #6f8590;
+  --good: #2f7d32;
+  --bad: #b3261e;
+  --warn: #b87800;
+  --info: #2a78d6;
+  --good-text: #276729;
+  --bad-text: #82201a;
+  --warn-text: #7f5300;
+  --info-text: #1a559c;
+  --bad-fg: #ffffff;
+  --sig-red: #b3382f;
+  --sig-yellow: #8a6a0a;
+  --sig-green: #2f7a4b;
+  --sig-blue: #2f6aa8;
+  --sig-orange: #a85a14;
+  --sig-grey: #5f6a70;
+  --cat-1: #3a8fab;
+  --cat-2: #829060;
+  --cat-3: #778ca8;
+  --cat-4: #6c9377;
+  --cat-5: #a77ba7;
+  --cat-6: #bb7a5d;
+  --cat-7: #c27474;
+  --cat-8: #5b93a1;
+  --cat-9: #a18650;
+  --cat-10: #a48565;
+  --sh-sm: 0 1px 2px rgba(10, 40, 60, 0.1);
+  --sh-md: 0 4px 14px rgba(10, 40, 60, 0.12), 0 0 1px rgba(0, 106, 142, 0.15);
+  --sh-lg: 0 12px 32px rgba(10, 40, 60, 0.18), 0 0 2px rgba(0, 106, 142, 0.2);
+}
+
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']):not(.dark) {
+    color-scheme: light;
+    --bg: #f4f8fa;
+    --bg-sidebar: #e9f0f4;
+    --bg-elevated: #ffffff;
+    --bg-hover: #dde8ee;
+    --bg-active: #cfdfe8;
+    --accent: #006a8e;
+    --accent-bright: #00506b;
+    --accent-dim: #7fb3c6;
+    --accent-fg: #ffffff;
+    --accent-glow: rgba(0, 106, 142, 0.1);
+    --text: #1c2428;
+    --text-dim: #4a5860;
+    --text-muted: #5a6870;
+    --border: rgba(0, 106, 142, 0.15);
+    --border-strong: rgba(0, 106, 142, 0.32);
+    --ring: rgba(0, 106, 142, 0.45);
+    --border-control: #6f8590;
+    --good: #2f7d32;
+    --bad: #b3261e;
+    --warn: #b87800;
+    --info: #2a78d6;
+    --good-text: #276729;
+    --bad-text: #82201a;
+    --warn-text: #7f5300;
+    --info-text: #1a559c;
+    --bad-fg: #ffffff;
+    --sig-red: #b3382f;
+    --sig-yellow: #8a6a0a;
+    --sig-green: #2f7a4b;
+    --sig-blue: #2f6aa8;
+    --sig-orange: #a85a14;
+    --sig-grey: #5f6a70;
+    --cat-1: #3a8fab;
+    --cat-2: #829060;
+    --cat-3: #778ca8;
+    --cat-4: #6c9377;
+    --cat-5: #a77ba7;
+    --cat-6: #bb7a5d;
+    --cat-7: #c27474;
+    --cat-8: #5b93a1;
+    --cat-9: #a18650;
+    --cat-10: #a48565;
+    --sh-sm: 0 1px 2px rgba(10, 40, 60, 0.1);
+    --sh-md: 0 4px 14px rgba(10, 40, 60, 0.12), 0 0 1px rgba(0, 106, 142, 0.15);
+    --sh-lg: 0 12px 32px rgba(10, 40, 60, 0.18), 0 0 2px rgba(0, 106, 142, 0.2);
+  }
+}
+
+/* Akzent-Palette Gold (bisheriges Theme). Auswahl per data-accent='gold' (gesetzt von accent.js, Cookie ds-accent);
+   ohne Attribut gilt Cyan. Überschreibt nur Tokens, die sich gegenüber Cyan unterscheiden. */
+:root[data-accent='gold'] {
+  --accent: #d4a574;
+  --accent-bright: #e8b985;
+  --accent-dim: #8a6b4d;
+  --accent-glow: rgba(212, 165, 116, 0.12);
+  --text: #e6e1d8;
+  --text-dim: #9a948a;
+  --text-muted: #8a857b;
+  --border: rgba(212, 165, 116, 0.1);
+  --border-strong: rgba(212, 165, 116, 0.2);
+  --ring: rgba(232, 185, 133, 0.5);
+  --border-control: #7a6d5a;
+  --sh-md: 0 4px 14px rgba(0, 0, 0, 0.4), 0 0 1px rgba(212, 165, 116, 0.08);
+  --sh-lg: 0 12px 32px rgba(0, 0, 0, 0.55), 0 0 2px rgba(212, 165, 116, 0.12);
+}
+
+:root[data-accent='gold'][data-theme='light'],
+:root[data-accent='gold'].light {
+  --bg: #faf7f2;
+  --bg-sidebar: #f1ece3;
+  --bg-hover: #ece5d8;
+  --bg-active: #e3d9c7;
+  --accent: #8a5d29;
+  --accent-bright: #6e4820;
+  --accent-dim: #b9a084;
+  --accent-fg: #fdfaf5;
+  --accent-glow: rgba(154, 106, 53, 0.1);
+  --text: #2a2620;
+  --text-dim: #5f594f;
+  --text-muted: #6f685c;
+  --border: rgba(154, 106, 53, 0.15);
+  --border-strong: rgba(154, 106, 53, 0.32);
+  --ring: rgba(154, 106, 53, 0.45);
+  --border-control: #8a806c;
+  --bad-fg: #fdfaf5;
+  --sig-grey: #6b655b;
+  --cat-1: #a9835c;
+  --sh-sm: 0 1px 2px rgba(60, 40, 10, 0.1);
+  --sh-md: 0 4px 14px rgba(60, 40, 10, 0.12), 0 0 1px rgba(154, 106, 53, 0.15);
+  --sh-lg: 0 12px 32px rgba(60, 40, 10, 0.18), 0 0 2px rgba(154, 106, 53, 0.2);
+}
+
+@media (prefers-color-scheme: light) {
+  :root[data-accent='gold']:not([data-theme='dark']):not(.dark) {
+    --bg: #faf7f2;
+    --bg-sidebar: #f1ece3;
+    --bg-hover: #ece5d8;
+    --bg-active: #e3d9c7;
+    --accent: #8a5d29;
+    --accent-bright: #6e4820;
+    --accent-dim: #b9a084;
+    --accent-fg: #fdfaf5;
+    --accent-glow: rgba(154, 106, 53, 0.1);
+    --text: #2a2620;
+    --text-dim: #5f594f;
+    --text-muted: #6f685c;
+    --border: rgba(154, 106, 53, 0.15);
+    --border-strong: rgba(154, 106, 53, 0.32);
+    --ring: rgba(154, 106, 53, 0.45);
+    --border-control: #8a806c;
+    --bad-fg: #fdfaf5;
+    --sig-grey: #6b655b;
+    --cat-1: #a9835c;
+    --sh-sm: 0 1px 2px rgba(60, 40, 10, 0.1);
+    --sh-md: 0 4px 14px rgba(60, 40, 10, 0.12), 0 0 1px rgba(154, 106, 53, 0.15);
+    --sh-lg: 0 12px 32px rgba(60, 40, 10, 0.18), 0 0 2px rgba(154, 106, 53, 0.2);
+  }
+}
+
+/* Breakpoints (feste Werte, Media-Queries erlauben keine Variablen): 900px = Tabbar statt Sidebar und engeres --page-pad,
+   600px = Mobil (Bottom-Sheet, .ds-hide-mobile, Toast über der Tabbar). */
+@media (max-width: 900px) {
+  :root { --page-pad: var(--space-4); }
+}

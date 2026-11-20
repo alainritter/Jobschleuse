@@ -1,0 +1,443 @@
+import json
+import sqlite3
+import threading
+from datetime import UTC, date, datetime
+
+import pytest
+
+from bewerbungs_pipeline import db
+from bewerbungs_pipeline.models import JobItem
+
+
+def make_item(**overrides) -> JobItem:
+    base = {
+        "title": "Mechatroniker (m/w/d)",
+        "company": "AC Motoren GmbH",
+        "location": "Eppertshausen",
+        "url": "https://www.arbeitsagentur.de/jobsuche/jobdetail/10001-1",
+        "source": "arbeitsagentur",
+        "source_ref": "10001-1",
+        "scraped_at": datetime.now(UTC),
+    }
+    base.update(overrides)
+    return JobItem(**base)
+
+
+@pytest.fixture
+def conn(tmp_path):
+    return db.connect(tmp_path / "jobs.db")
+
+
+def test_insert_and_read(conn):
+    assert db.insert_job(conn, make_item()) is True
+    rows = db.list_jobs(conn)
+    assert len(rows) == 1
+    assert rows[0]["status"] == "new"
+    assert rows[0]["company"] == "AC Motoren GmbH"
+
+
+def test_dedupe_same_url(conn):
+    db.insert_job(conn, make_item())
+    assert db.insert_job(conn, make_item()) is False
+    assert len(db.list_jobs(conn)) == 1
+
+
+def test_dedupe_cross_source_same_job(conn):
+    db.insert_job(conn, make_item())
+    dup = make_item(
+        url="https://andere-quelle.de/job/1", source_ref=None, source="career:acme"
+    )
+    assert db.insert_job(conn, dup) is False
+
+
+def test_same_title_other_location_is_no_duplicate(conn):
+    db.insert_job(conn, make_item())
+    other = make_item(
+        url="https://www.arbeitsagentur.de/jobsuche/jobdetail/10001-2",
+        source_ref="10001-2",
+        location="Frankfurt am Main",
+    )
+    assert db.insert_job(conn, other) is True
+    assert len(db.list_jobs(conn)) == 2
+
+
+def test_status_transitions(conn):
+    db.insert_job(conn, make_item())
+    job_id = db.list_jobs(conn)[0]["id"]
+    db.set_status(conn, job_id, "selected")
+    assert db.get_job(conn, job_id)["status"] == "selected"
+    with pytest.raises(ValueError):
+        db.set_status(conn, job_id, "kaputt")
+
+
+def test_list_filter_and_roundtrip(conn):
+    db.insert_job(conn, make_item())
+    job_id = db.list_jobs(conn)[0]["id"]
+    db.set_status(conn, job_id, "rejected")
+    assert db.list_jobs(conn, status="new") == []
+    item = db.row_to_item(db.get_job(conn, job_id))
+    assert item.company == "AC Motoren GmbH"
+    assert item.source_ref == "10001-1"
+
+
+def test_update_description(conn):
+    db.insert_job(conn, make_item())
+    job_id = db.list_jobs(conn)[0]["id"]
+    db.update_description(conn, job_id, "Langer Anzeigentext")
+    assert db.get_job(conn, job_id)["description_md"] == "Langer Anzeigentext"
+
+
+def test_connect_creates_application_tables(tmp_path):
+    conn = db.connect(tmp_path / "jobs.db")
+    tables = {
+        row[0]
+        for row in conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='table'"
+        ).fetchall()
+    }
+    assert "applications" in tables
+    assert "application_slots" in tables
+
+
+def test_connect_enables_foreign_keys(tmp_path):
+    conn = db.connect(tmp_path / "jobs.db")
+    assert conn.execute("PRAGMA foreign_keys").fetchone()[0] == 1
+
+
+def test_connect_migrates_generated_status_to_selected(tmp_path):
+    db_path = tmp_path / "jobs.db"
+    conn = db.connect(db_path)
+    conn.execute(
+        """INSERT INTO jobs (url, dedupe_hash, title, company, location,
+                             source, scraped_at, status)
+           VALUES ('u', 'h', 't', 'c', 'l', 's', '2026-01-01', 'generated')"""
+    )
+    conn.execute("PRAGMA user_version = 0")
+    conn.commit()
+    conn.close()
+
+    conn = db.connect(db_path)
+    assert conn.execute("SELECT status FROM jobs").fetchone()[0] == "selected"
+    assert conn.execute("PRAGMA user_version").fetchone()[0] == db.SCHEMA_VERSION
+
+
+def test_set_status_rejects_generated(tmp_path):
+    conn = db.connect(tmp_path / "jobs.db")
+    conn.execute(
+        """INSERT INTO jobs (url, dedupe_hash, title, company, location,
+                             source, scraped_at)
+           VALUES ('u', 'h', 't', 'c', 'l', 's', '2026-01-01')"""
+    )
+    conn.commit()
+    job_id = conn.execute("SELECT id FROM jobs").fetchone()[0]
+    with pytest.raises(ValueError):
+        db.set_status(conn, job_id, "generated")
+
+
+def test_verbindung_darf_thread_wechseln(tmp_path):
+    """FastAPI öffnet die Anfrage-Verbindung in einem Arbeits-Thread und
+    schließt sie in einem anderen. sqlite3 muss das zulassen, sonst endet
+    jede Anfrage im Traceback."""
+    conn = db.connect(tmp_path / "jobs.db")
+    fehler = []
+
+    def schliessen():
+        try:
+            conn.close()
+        except Exception as exc:
+            fehler.append(exc)
+
+    thread = threading.Thread(target=schliessen)
+    thread.start()
+    thread.join()
+    assert fehler == []
+
+
+def test_jobitem_neue_felder_sind_optional():
+    """Bestehende Aufrufe ohne die neuen Felder bleiben gueltig."""
+    item = make_item()
+    assert item.job_kind is None
+    assert item.employer_kind is None
+    assert item.source_partner is None
+    assert item.gone_at is None
+
+
+def test_jobitem_nimmt_neue_felder_an():
+    item = make_item(
+        job_kind="ARBEIT",
+        employer_kind="vermittler",
+        source_partner="XING GmbH & Co. KG",
+        external_host="persy.jobs",
+        homeoffice="NACH_VEREINBARUNG",
+        salary="19,78–26,00 €/h",
+        contract="unbefristet",
+        worktime="Vollzeit",
+        distance_km=42,
+        start_date=date(2026, 9, 1),
+        changed_at=datetime(2026, 8, 10, 18, 5, tzinfo=UTC),
+        street="Lyoner Str. 12",
+        plz="60528",
+        education="MITTLERE_REIFE_MITTLERER_BILDUNGSABSCHLUSS",
+        employer_hash="fJsK89VjMAftJUvCwcatHyz",
+    )
+    assert item.distance_km == 42
+    assert item.start_date.isoformat() == "2026-09-01"
+
+
+def test_migration_erhaelt_bestandsdaten(tmp_path):
+    """Eine Datenbank im alten Schema bekommt die neuen Spalten, ohne Zeilen zu verlieren."""
+    pfad = tmp_path / "alt.db"
+    alt = sqlite3.connect(pfad)
+    alt.execute(
+        """CREATE TABLE jobs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            url TEXT NOT NULL UNIQUE, dedupe_hash TEXT NOT NULL UNIQUE,
+            source_ref TEXT, title TEXT NOT NULL, company TEXT NOT NULL,
+            company_website TEXT, location TEXT NOT NULL, source TEXT NOT NULL,
+            posted_at TEXT, contact_name TEXT, contact_email TEXT,
+            description_md TEXT NOT NULL DEFAULT '', scraped_at TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'new')"""
+    )
+    alt.execute(
+        "INSERT INTO jobs (url, dedupe_hash, title, company, location, source, scraped_at)"
+        " VALUES ('http://a', 'hash1', 'Alt', 'Firma', 'Ort', 'arbeitsagentur', '2026-07-01T00:00:00+00:00')"
+    )
+    alt.commit()
+    alt.close()
+
+    conn = db.connect(pfad)
+    zeilen = conn.execute("SELECT * FROM jobs").fetchall()
+    assert len(zeilen) == 1
+    assert zeilen[0]["title"] == "Alt"
+    assert zeilen[0]["gone_at"] is None
+    assert zeilen[0]["score"] is None
+    assert zeilen[0]["tags"] is None
+    assert conn.execute("PRAGMA user_version").fetchone()[0] == db.SCHEMA_VERSION
+    conn.close()
+
+
+def test_migration_ist_wiederholbar(tmp_path):
+    """Zweimal verbinden darf nicht an bereits vorhandenen Spalten scheitern."""
+    pfad = tmp_path / "zweimal.db"
+    db.connect(pfad).close()
+    conn = db.connect(pfad)
+    assert conn.execute("PRAGMA user_version").fetchone()[0] == db.SCHEMA_VERSION
+    conn.close()
+
+
+def test_insert_job_schreibt_neue_spalten(conn):
+    db.insert_job(
+        conn,
+        make_item(
+            source_partner="XING GmbH & Co. KG",
+            employer_kind="vermittler",
+            distance_km=42,
+        ),
+    )
+    zeile = conn.execute("SELECT * FROM jobs").fetchone()
+    assert zeile["source_partner"] == "XING GmbH & Co. KG"
+    assert zeile["employer_kind"] == "vermittler"
+    assert zeile["distance_km"] == 42
+
+
+def test_row_to_item_liest_neue_spalten(conn):
+    db.insert_job(
+        conn, make_item(source_partner="XING GmbH & Co. KG", salary="ab 19,78 €/h")
+    )
+    item = db.row_to_item(conn.execute("SELECT * FROM jobs").fetchone())
+    assert item.source_partner == "XING GmbH & Co. KG"
+    assert item.salary == "ab 19,78 €/h"
+
+
+def test_offene_referenzen_und_mark_gone(conn):
+    db.insert_job(conn, make_item(url="http://a", source_ref="ref-a"))
+    db.insert_job(conn, make_item(url="http://b", source_ref="ref-b", title="Zweiter"))
+    db.insert_job(conn, make_item(url="http://c", source_ref=None, title="Dritter"))
+
+    assert sorted(db.offene_referenzen(conn)) == ["ref-a", "ref-b"]
+
+    assert db.mark_gone(conn, {"ref-a"}) == 1
+    assert db.offene_referenzen(conn) == ["ref-b"]
+    zeile = conn.execute(
+        "SELECT gone_at FROM jobs WHERE source_ref = 'ref-a'"
+    ).fetchone()
+    assert zeile["gone_at"] is not None
+
+
+def test_offene_referenzen_ignoriert_andere_quellen(conn):
+    db.insert_job(conn, make_item(url="http://a", source_ref="ref-a"))
+    db.insert_job(
+        conn,
+        make_item(
+            url="http://b",
+            source="indeed",
+            source_ref="indeed-ref-b",
+            title="Zweiter",
+        ),
+    )
+
+    assert db.offene_referenzen(conn) == ["ref-a"]
+
+
+def test_mark_gone_ohne_referenzen(conn):
+    db.insert_job(conn, make_item(source_ref="ref-a"))
+    assert db.mark_gone(conn, set()) == 0
+
+
+def test_suche_jobs_blendet_verschwundene_aus(conn):
+    db.insert_job(conn, make_item(url="http://a", source_ref="ref-a"))
+    db.insert_job(conn, make_item(url="http://b", source_ref="ref-b", title="Zweiter"))
+    db.mark_gone(conn, {"ref-a"})
+
+    assert len(db.suche_jobs(conn)) == 1
+    assert len(db.suche_jobs(conn, mit_verschwundenen=True)) == 2
+
+
+def test_suche_jobs_default_bleibt_id_absteigend(conn):
+    db.insert_job(conn, make_item(url="http://a"))
+    db.insert_job(conn, make_item(url="http://b", title="Zweite"))
+    rows = db.suche_jobs(conn)
+    assert [r["id"] for r in rows] == [2, 1]
+
+
+def test_suche_jobs_sortiert_nach_titel_aufsteigend(conn):
+    db.insert_job(conn, make_item(url="http://a", title="Zebra", company="Firma A"))
+    db.insert_job(conn, make_item(url="http://b", title="Anton", company="Firma B"))
+    rows = db.suche_jobs(conn, sort="title", order="asc")
+    assert [r["title"] for r in rows] == ["Anton", "Zebra"]
+
+
+def test_suche_jobs_sortiert_nach_entfernung(conn):
+    db.insert_job(conn, make_item(url="http://a", distance_km=50))
+    db.insert_job(conn, make_item(url="http://b", distance_km=10, title="Andere"))
+    rows = db.suche_jobs(conn, sort="distance_km", order="asc")
+    assert [r["distance_km"] for r in rows] == [10, 50]
+
+
+def test_suche_jobs_unbekannte_sortierung_faellt_auf_id_zurueck(conn):
+    db.insert_job(conn, make_item(url="http://a"))
+    db.insert_job(conn, make_item(url="http://b", title="Zweite"))
+    rows = db.suche_jobs(conn, sort="does-not-exist; DROP TABLE jobs")
+    assert [r["id"] for r in rows] == [2, 1]
+
+
+def test_set_status_bulk_aktualisiert_mehrere(conn):
+    db.insert_job(conn, make_item(url="http://a"))
+    db.insert_job(conn, make_item(url="http://b", title="Zweite"))
+    ids = [r["id"] for r in db.list_jobs(conn)]
+    geaendert = db.set_status_bulk(conn, ids, "selected")
+    assert geaendert == 2
+    assert all(r["status"] == "selected" for r in db.list_jobs(conn))
+
+
+def test_set_status_bulk_leere_liste(conn):
+    assert db.set_status_bulk(conn, [], "selected") == 0
+
+
+def test_set_status_bulk_lehnt_unbekannten_status_ab(conn):
+    db.insert_job(conn, make_item(url="http://a"))
+    job_id = db.list_jobs(conn)[0]["id"]
+    with pytest.raises(ValueError):
+        db.set_status_bulk(conn, [job_id], "geloescht")
+
+
+def test_migration_v2_auf_v3_ruestet_bewertungsspalten_nach(tmp_path):
+    pfad = tmp_path / "v2.db"
+    conn = db.connect(pfad)
+    db.insert_job(conn, make_item())
+    conn.close()
+    # Datenbank künstlich auf Stand v2 zurückdrehen: Spalten weg, Version 2.
+    alt = sqlite3.connect(pfad)
+    for spalte in ("score", "score_reason", "tags", "rated_at"):
+        alt.execute(f"ALTER TABLE jobs DROP COLUMN {spalte}")
+    alt.execute("PRAGMA user_version = 2")
+    alt.commit()
+    alt.close()
+
+    conn = db.connect(pfad)
+    spalten = {z["name"] for z in conn.execute("PRAGMA table_info(jobs)").fetchall()}
+    assert {"score", "score_reason", "tags", "rated_at"} <= spalten
+    assert len(db.list_jobs(conn)) == 1
+    assert conn.execute("PRAGMA user_version").fetchone()[0] == 3
+    conn.close()
+
+
+def test_set_rating_speichert_und_normalisiert(conn):
+    db.insert_job(conn, make_item())
+    db.set_rating(conn, 1, 80, "passt gut", [" Python", "react", "PYTHON", "", "React "])
+    row = db.get_job(conn, 1)
+    assert row["score"] == 80
+    assert row["score_reason"] == "passt gut"
+    assert json.loads(row["tags"]) == ["python", "react"]
+    assert row["rated_at"] is not None
+
+
+def test_set_rating_grenzwerte(conn):
+    db.insert_job(conn, make_item())
+    db.set_rating(conn, 1, 0, "", [])
+    assert db.get_job(conn, 1)["score"] == 0
+    db.set_rating(conn, 1, 100, "", [])
+    assert db.get_job(conn, 1)["score"] == 100
+    for falsch in (-1, 101):
+        with pytest.raises(ValueError):
+            db.set_rating(conn, 1, falsch, "", [])
+    assert db.get_job(conn, 1)["score"] == 100
+
+
+def test_set_ratings_bulk_schreibt_nichts_bei_ungueltigem_score(conn):
+    db.insert_job(conn, make_item(url="http://a"))
+    db.insert_job(conn, make_item(url="http://b", title="Zweite"))
+    with pytest.raises(ValueError):
+        db.set_ratings_bulk(
+            conn, [db.Rating(1, 50, "ok", []), db.Rating(2, 150, "kaputt", [])]
+        )
+    assert db.get_job(conn, 1)["score"] is None
+
+
+def test_set_ratings_bulk_zaehlt_eingaben(conn):
+    db.insert_job(conn, make_item())
+    anzahl = db.set_ratings_bulk(
+        conn, [db.Rating(1, 10, "erst", []), db.Rating(1, 90, "dann", ["x"])]
+    )
+    assert anzahl == 2
+    assert db.get_job(conn, 1)["score"] == 90
+
+
+def test_bewertung_ueberlebt_erneutes_einfuegen(conn):
+    db.insert_job(conn, make_item())
+    db.set_rating(conn, 1, 70, "gut", ["python"])
+    assert db.insert_job(conn, make_item()) is False
+    assert db.get_job(conn, 1)["score"] == 70
+
+
+def test_suche_jobs_filtert_unbewertet_und_min_score(conn):
+    for i, titel in enumerate(("A", "B", "C"), start=1):
+        db.insert_job(conn, make_item(url=f"http://{i}", title=titel))
+    db.set_rating(conn, 1, 40, "", [])
+    db.set_rating(conn, 2, 90, "", [])
+    assert [r["id"] for r in db.suche_jobs(conn, unbewertet=True)] == [3]
+    assert [r["id"] for r in db.suche_jobs(conn, min_score=50)] == [2]
+
+
+def test_suche_jobs_sortiert_nach_score_unbewertete_zuletzt(conn):
+    for i, titel in enumerate(("A", "B", "C"), start=1):
+        db.insert_job(conn, make_item(url=f"http://{i}", title=titel))
+    db.set_rating(conn, 1, 40, "", [])
+    db.set_rating(conn, 3, 90, "", [])
+    rows = db.suche_jobs(conn, sort="score", order="desc")
+    assert [r["id"] for r in rows] == [3, 1, 2]
+
+
+def test_suche_jobs_begrenzt_mit_limit(conn):
+    for titel in ("A", "B", "C"):
+        db.insert_job(conn, make_item(title=titel, url=f"https://example.org/{titel}"))
+    assert [r["title"] for r in db.suche_jobs(conn, sort="title", order="asc", limit=2)] == ["A", "B"]
+
+
+def test_zaehle_pro_status(conn):
+    for titel in ("Alpha", "Beta", "Gamma"):
+        db.insert_job(conn, make_item(title=titel, url=f"https://example.org/{titel}"))
+    ids = [r["id"] for r in db.list_jobs(conn)]
+    db.set_status(conn, ids[0], "selected")
+    assert db.zaehle_pro_status(conn) == {"new": 2, "selected": 1, "rejected": 0}
+    assert db.zaehle_pro_status(conn, q="gamma") == {"new": 1, "selected": 0, "rejected": 0}
