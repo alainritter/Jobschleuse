@@ -69,7 +69,7 @@ def test_nur_loopback_lehnt_fremden_host_ab(tmp_path):
 
 
 def test_nur_loopback_nimmt_freigegebenen_host_an(tmp_path):
-    """Hinter der Pforte kommt der Tailscale-Name als Host an."""
+    """Hinter Pylai kommt der Tailscale-Name als Host an."""
     cfg = dataclasses.replace(make_cfg(tmp_path), allowed_hosts=frozenset({"host.example.ts.net"}))
     client = TestClient(create_app(cfg, nur_loopback=True))
     assert client.get("/api/jobs", headers={"host": "host.example.ts.net:8445"}).status_code == 200

@@ -17,7 +17,7 @@ class Config:
     llm_api_key: str
     llm_model: str
     web_token: str = ""
-    # Extra host names accepted in loopback mode, e.g. the Tailscale name behind Pforte.
+    # Extra host names accepted in loopback mode, e.g. the Tailscale name behind Pylai.
     allowed_hosts: frozenset[str] = frozenset()
 
 

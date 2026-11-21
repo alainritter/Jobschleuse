@@ -19,7 +19,7 @@ For the PDF export a Chromium-based browser (`chromium`, `google-chrome` or `bra
 uv run jobs serve   # http://127.0.0.1:8765
 ```
 
-React and shadcn/ui against a JSON API under `/api/*`: job list with filters, sorting and bulk actions, command palette (Ctrl/Cmd+K), application generation, per-block auto-save editing and regeneration, live preview, export, light and dark theme. Local only, no login. CLI and UI share the same business logic.
+React and shadcn/ui against a JSON API under `/api/*`: job list with filters, sorting and bulk actions, command palette (Ctrl/Cmd+K), application generation, per-block auto-save editing and regeneration, live preview, export, light and dark theme. Bound to 127.0.0.1 by default, no login unless `JOBS_WEB_TOKEN` is set (then HTTP Basic Auth protects the whole app). CLI and UI share the same business logic.
 
 The frontend lives in `frontend/` (Vite, React, TypeScript) and its build is committed (`frontend/dist/`), so `uv run jobs serve` is the only command needed at runtime. For frontend work: `cd frontend && npm install && npm run dev` (hot reload, proxies to the FastAPI API), `npm run build` before committing, `npm test` for Vitest.
 
