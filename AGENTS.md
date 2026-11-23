@@ -35,4 +35,4 @@ Release Notes liegen datiert unter `docs/releases/`.
 
 ## UI-Regel (Harmonia)
 
-UI nur mit Harmonia (`/home/a/Dev/Hestia/Harmonia/`), eingebunden als committed Kopie in `frontend/src/harmonia/` (Update: `npm run sync:harmonia`), damit das Repo ohne Hestia baut. Keine eigenen Hex-Farben, px-Schriftgrößen oder Abstände – nur Tokens (`--fs-*`, `--space-*`, `--r-*`, Farbvariablen). Fehlende Komponenten ins Harmonia, nicht in die App.
+UI nur mit Harmonia (`/home/a/Dev/Harmonia/`), eingebunden als committed Kopie in `frontend/src/harmonia/` (Update: `npm run sync:harmonia`), damit das Repo ohne Hestia baut. Keine eigenen Hex-Farben, px-Schriftgrößen oder Abstände – nur Tokens (`--fs-*`, `--space-*`, `--r-*`, Farbvariablen). Fehlende Komponenten ins Harmonia, nicht in die App.

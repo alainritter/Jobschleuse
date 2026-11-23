@@ -4,7 +4,7 @@ import { cpSync, existsSync } from 'node:fs'
 import path from 'node:path'
 
 const here = import.meta.dirname
-const source = process.env.HARMONIA_DIR ?? path.resolve(here, '../../../Hestia/Harmonia')
+const source = process.env.HARMONIA_DIR ?? path.resolve(here, '../../../Harmonia')
 if (!existsSync(source)) {
   console.error(`Harmonia not found at ${source}. Set HARMONIA_DIR to a checkout of https://github.com/alainritter/Harmonia`)
   process.exit(1)
