@@ -345,7 +345,7 @@ button.ds-item:is(:hover, :focus-visible) .ds-item-meta { color: var(--text-dim)
   font-size: var(--fs-base); line-height: var(--leading-normal); overflow-wrap: anywhere;
 }
 .ds-dialog-text { margin: 0; font-size: var(--fs-sm); line-height: var(--leading-normal); color: var(--text-dim); }
-.ds-dialog-error { margin: 0; font-size: var(--fs-sm); color: var(--bad); overflow-wrap: anywhere; }
+.ds-dialog-error { margin: 0; font-size: var(--fs-sm); color: var(--bad-text); overflow-wrap: anywhere; }
 .ds-dialog-error:empty { display: none; }
 .ds-dialog-actions { display: flex; justify-content: flex-end; gap: var(--space-2); margin-top: var(--space-2); }
 @media (min-width: 601px) { .ds-dialog.wide { width: min(56rem, calc(100% - var(--space-6))); } }
